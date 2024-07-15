@@ -46,7 +46,7 @@ const findCandidates = debounce(function ({ find, setModule, setError }) {
 
 interface ReplacementComponentProps {
     module: [id: number, factory: Function];
-    match: string;
+    match: string | RegExp | undefined;
     replacement: string | ReplaceFn;
     setReplacementError(error: any): void;
 }
@@ -58,21 +58,19 @@ function ReplacementComponent({ module, match, replacement, setReplacementError 
     const [patchedCode, matchResult, diff] = React.useMemo(() => {
         const src: string = fact.toString().replaceAll("\n", "");
 
-        try {
-            new RegExp(match);
-        } catch (e) {
+        if (match === undefined) {
             return ["", [], []];
         }
         const canonicalMatch = canonicalizeMatch(new RegExp(match));
         try {
             const canonicalReplace = canonicalizeReplace(replacement, "YourPlugin");
-            var patched = src.replace(canonicalMatch, canonicalReplace as string);
+            var patched = src.replace(match, canonicalReplace as string);
             setReplacementError(void 0);
         } catch (e) {
             setReplacementError((e as Error).message);
             return ["", [], []];
         }
-        const m = src.match(canonicalMatch);
+        const m = src.match(match);
         return [patched, m, makeDiff(src, patched, m)];
     }, [id, match, replacement]);
 
@@ -225,13 +223,12 @@ function ReplacementInput({ replacement, setReplacement, replacementError }) {
 }
 
 interface FullPatchInputProps {
-    setFind(v: string): void;
-    setParsedFind(v: string | RegExp): void;
+    setFind(find: string | RegExp | undefined): void;
     setMatch(v: string): void;
     setReplacement(v: string | ReplaceFn): void;
 }
 
-function FullPatchInput({ setFind, setParsedFind, setMatch, setReplacement }: FullPatchInputProps) {
+function FullPatchInput({ setFind, setMatch, setReplacement }: FullPatchInputProps) {
     const [fullPatch, setFullPatch] = React.useState<string>("");
     const [fullPatchError, setFullPatchError] = React.useState<string>("");
 
@@ -239,8 +236,7 @@ function FullPatchInput({ setFind, setParsedFind, setMatch, setReplacement }: Fu
         if (fullPatch === "") {
             setFullPatchError("");
 
-            setFind("");
-            setParsedFind("");
+            setFind(undefined);
             setMatch("");
             setReplacement("");
             return;
@@ -249,7 +245,7 @@ function FullPatchInput({ setFind, setParsedFind, setMatch, setReplacement }: Fu
         try {
             const parsed = (0, eval)(`(${fullPatch})`) as Patch;
 
-            if (!parsed.find) throw new Error("No 'find' field");
+            if (parsed.find === undefined) throw new Error("No 'find' field");
             if (!parsed.replacement) throw new Error("No 'replacement' field");
 
             if (parsed.replacement instanceof Array) {
@@ -264,8 +260,7 @@ function FullPatchInput({ setFind, setParsedFind, setMatch, setReplacement }: Fu
             if (!parsed.replacement.match) throw new Error("No 'replacement.match' field");
             if (!parsed.replacement.replace) throw new Error("No 'replacement.replace' field");
 
-            setFind(parsed.find instanceof RegExp ? parsed.find.toString() : parsed.find);
-            setParsedFind(parsed.find);
+            setFind(parsed.find);
             setMatch(parsed.replacement.match instanceof RegExp ? parsed.replacement.match.source : parsed.replacement.match);
             setReplacement(parsed.replacement.replace);
             setFullPatchError("");
@@ -281,10 +276,67 @@ function FullPatchInput({ setFind, setParsedFind, setMatch, setReplacement }: Fu
     </>;
 }
 
+function makeOnMatchChangeFunctions({ setMatch, setMatchSource, setRawMatchSource, setMatchError }) {
+    function onMatchChange(match: string | RegExp | undefined, name?: string, matchSource?: string | undefined) {
+        setMatchError(void 0);
+        try {
+            if (matchSource === undefined) {
+                if (matchSource === undefined && match instanceof RegExp) {
+                    matchSource = match.toString();
+                }
+                if (matchSource === undefined && match !== undefined) {
+                    matchSource = JSON.stringify(match);
+                }
+                setMatch(match);
+                if (match !== undefined) onMatchSourceChange(matchSource, name, match);
+            } else {
+                setMatch(match);
+            }
+        } catch (e: any) {
+            setMatchError((e as Error).message);
+        }
+    }
+
+    function onMatchSourceChange(matchSource: string | undefined, name?: string, match?: string | RegExp | undefined) {
+        try {
+            if (match === undefined) {
+                if (match === undefined && matchSource !== undefined) {
+                    const regExpMatch = matchSource.match(/^\/(.*)\/(\p{ID_Continue}*)$/sv);
+                    if (regExpMatch !== undefined && regExpMatch !== null) match = new RegExp(...(regExpMatch.slice(1) as [string, string]));
+                }
+                if (match === undefined && matchSource !== undefined) {
+                    const stringMatch = matchSource.match(/^(["'])(?:(?!\1|\\).|\\.)*\1$/v);
+                    if (stringMatch?.input !== undefined) match = (0, eval)(stringMatch.input) as string;
+                }
+                if (match === undefined && matchSource !== undefined) {
+                    match = matchSource;
+                    matchSource = JSON.stringify(match);
+                }
+                setMatchSource(matchSource);
+                if (matchSource !== undefined) onMatchChange(match, name, matchSource);
+            } else {
+                setMatchSource(matchSource);
+            }
+        } catch (e: any) {
+            setMatchError((e as Error).message);
+        }
+    }
+
+    function onRawMatchSourceChange(rawMatchSource: string, name?: string, match?: string | RegExp | undefined) {
+        setRawMatchSource(rawMatchSource);
+        return onMatchSourceChange(rawMatchSource, name, match);
+    }
+
+    return { onMatchChange, onMatchSourceChange, onRawMatchSourceChange };
+}
+
 function PatchHelper() {
-    const [find, setFind] = React.useState<string>("");
-    const [parsedFind, setParsedFind] = React.useState<string | RegExp>("");
-    const [match, setMatch] = React.useState<string>("");
+    const [find, setFind] = React.useState<string | RegExp | undefined>(undefined);
+    const [findSource, setFindSource] = React.useState<string | undefined>(undefined);
+    const [rawFindSource, setRawFindSource] = React.useState<string>("");
+    const [match, setMatch] = React.useState<string | RegExp | undefined>(undefined);
+    const [matchSource, setMatchSource] = React.useState<string | undefined>(undefined);
+    const [rawMatchSource, setRawMatchSource] = React.useState<string>("");
     const [replacement, setReplacement] = React.useState<string | ReplaceFn>("");
 
     const [replacementError, setReplacementError] = React.useState<string>();
@@ -296,50 +348,48 @@ function PatchHelper() {
     const code = React.useMemo(() => {
         return `
 {
-    find: ${parsedFind instanceof RegExp ? parsedFind.toString() : JSON.stringify(parsedFind)},
+    find: ${findSource},
     replacement: {
-        match: /${match.replace(/(?<!\\)\//g, "\\/")}/,
+        match: ${matchSource},
         replace: ${typeof replacement === "function" ? replacement.toString() : JSON.stringify(replacement)}
     }
-}
+},
         `.trim();
-    }, [parsedFind, match, replacement]);
+    }, [findSource, matchSource, replacement]);
 
-    function onFindChange(v: string) {
-        setFind(v);
-
-        try {
-            let parsedFind = v as string | RegExp;
-            if (/^\/.+?\/$/.test(v)) parsedFind = new RegExp(v.slice(1, -1));
-
-            setFindError(void 0);
-            setParsedFind(parsedFind);
-
-            if (v.length) {
-                findCandidates({ find: parsedFind, setModule, setError: setFindError });
-            }
-        } catch (e: any) {
-            setFindError((e as Error).message);
+    React.useEffect(() => {
+        if (find !== undefined && (find instanceof RegExp ? find.source !== "(?:)" : find !== "")) {
+            findCandidates({ find: canonicalizeMatch(find), setModule, setError: setFindError });
         }
-    }
+    }, [find]);
 
-    function onMatchChange(v: string) {
-        setMatch(v);
+    const {
+        onMatchChange: onFindChange,
+        onMatchSourceChange: onFindSourceChange,
+        onRawMatchSourceChange: onRawFindSourceChange,
+    } = makeOnMatchChangeFunctions({
+        setMatch: setFind,
+        setMatchSource: setFindSource,
+        setRawMatchSource: setRawFindSource,
+        setMatchError: setFindError,
+    });
 
-        try {
-            new RegExp(v);
-            setMatchError(void 0);
-        } catch (e: any) {
-            setMatchError((e as Error).message);
-        }
-    }
+    const {
+        onMatchChange,
+        onMatchSourceChange,
+        onRawMatchSourceChange,
+    } = makeOnMatchChangeFunctions({
+        setMatch,
+        setMatchSource,
+        setRawMatchSource,
+        setMatchError,
+    });
 
     return (
         <SettingsTab title="Patch Helper">
             <Forms.FormTitle>full patch</Forms.FormTitle>
             <FullPatchInput
                 setFind={onFindChange}
-                setParsedFind={setParsedFind}
                 setMatch={onMatchChange}
                 setReplacement={setReplacement}
             />
@@ -347,16 +397,16 @@ function PatchHelper() {
             <Forms.FormTitle className={Margins.top8}>find</Forms.FormTitle>
             <TextInput
                 type="text"
-                value={find}
-                onChange={onFindChange}
+                value={rawFindSource}
+                onChange={onRawFindSourceChange}
                 error={findError}
             />
 
             <Forms.FormTitle className={Margins.top8}>match</Forms.FormTitle>
             <TextInput
                 type="text"
-                value={match}
-                onChange={onMatchChange}
+                value={rawMatchSource}
+                onChange={onRawMatchSourceChange}
                 error={matchError}
             />
 
@@ -377,13 +427,9 @@ function PatchHelper() {
                 />
             )}
 
-            {!!(find && match && replacement) && (
-                <>
-                    <Forms.FormTitle className={Margins.top20}>Code</Forms.FormTitle>
-                    <CodeBlock lang="js" content={code} />
-                    <Button onClick={() => Clipboard.copy(code)}>Copy to Clipboard</Button>
-                </>
-            )}
+            <Forms.FormTitle className={Margins.top20}>Code</Forms.FormTitle>
+            <CodeBlock lang="js" content={code} />
+            <Button onClick={() => Clipboard.copy(code)}>Copy to Clipboard</Button>
         </SettingsTab>
     );
 }
