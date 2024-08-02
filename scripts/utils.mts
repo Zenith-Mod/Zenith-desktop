@@ -16,15 +16,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/**
- * @param {string} filePath
- * @returns {string | null}
- */
-export function getPluginTarget(filePath) {
-    const pathParts = filePath.split(/[/\\]/);
-    if (/^index\.tsx?$/.test(pathParts.at(-1))) pathParts.pop();
+export interface PromiseWithResolvers<T> {
+    promise: Promise<T>;
+    resolve: (value: T | PromiseLike<T>) => void;
+    reject: (reason?: any) => void;
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+    let resolve: any, reject: any;
+    const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+    });
+    return { promise, resolve, reject };
+}
 
-    const identifier = pathParts.at(-1).replace(/\.tsx?$/, "");
+export function getPluginTarget(filePath: string): string | undefined {
+    const pathParts = filePath.split(/[/\\]/);
+    if (/^index\.tsx?$/.test(pathParts.at(-1) ?? "")) pathParts.pop();
+
+    const identifier = (pathParts.at(-1) ?? "").replace(/\.tsx?$/, "");
     const identiferBits = identifier.split(".");
-    return identiferBits.length === 1 ? null : identiferBits.at(-1);
+    return identiferBits.length === 1 ? undefined : identiferBits.at(-1);
 }
