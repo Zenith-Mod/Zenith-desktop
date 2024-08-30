@@ -69,38 +69,38 @@ const tags: Tag[] = [
     {
         name: "WEBHOOK",
         displayName: "Webhook",
-        description: "Messages sent by webhooks",
+        description: "Messages sent by webhooks.",
         condition: isWebhook
     }, {
         name: "OWNER",
         displayName: "Owner",
-        description: "Owns the server",
+        description: "Owns the server.",
         condition: (_, user, channel) => GuildStore.getGuild(channel?.guild_id)?.ownerId === user.id
     }, {
         name: "ADMINISTRATOR",
         displayName: "Admin",
-        description: "Has the administrator permission",
+        description: "Has the administrator permission.",
         permissions: ["ADMINISTRATOR"]
     }, {
         name: "MODERATOR_STAFF",
         displayName: "Staff",
-        description: "Can manage the server, channels or roles",
+        description: "Can manage the server, channels or roles.",
         permissions: ["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]
     }, {
         name: "MODERATOR",
         displayName: "Mod",
-        description: "Can manage messages or kick/ban people",
-        permissions: ["MANAGE_MESSAGES", "KICK_MEMBERS", "BAN_MEMBERS"]
+        description: "Can timeout, kick or ban members.",
+        permissions: ["MODERATE_MEMBERS", "KICK_MEMBERS", "BAN_MEMBERS"]
     }, {
         name: "VOICE_MODERATOR",
         displayName: "VC Mod",
-        description: "Can manage voice chats",
+        description: "Can manage voice chats.",
         permissions: ["MOVE_MEMBERS", "MUTE_MEMBERS", "DEAFEN_MEMBERS"]
     }, {
         name: "CHAT_MODERATOR",
-        displayName: "Chat Mod",
-        description: "Can timeout people",
-        permissions: ["MODERATE_MEMBERS"]
+        displayName: "ChatMod",
+        description: "Can manage messages.",
+        permissions: ["MANAGE_MESSAGES"]
     }
 ];
 const defaultSettings = Object.fromEntries(
@@ -175,7 +175,7 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "MoreUserTags",
     description: "Adds tags for webhooks and moderative roles (owner, admin, etc.)",
-    authors: [Devs.Cyn, Devs.TheSun, Devs.RyanCaoDev, Devs.LordElias, Devs.AutumnVN],
+    authors: [Devs.Cyn, Devs.TheSun, Devs.RyanCaoDev, Devs.LordElias, Devs.AutumnVN, Devs.Gorciu],
     settings,
     patches: [
         // add tags to the tag list
