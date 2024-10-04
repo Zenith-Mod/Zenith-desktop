@@ -25,21 +25,35 @@ import { CopyIcon, LinkIcon } from "@components/Icons";
 import { Devs } from "@utils/constants";
 import { copyWithToast } from "@utils/misc";
 import definePlugin, { OptionType } from "@utils/types";
+import { type DisplayProfile, type PlatformType, type ProfileConnectedAccountData, Theme, type UserRecord } from "@vencord/discord-types";
 import { findByCodeLazy, findByPropsLazy } from "@webpack";
 import { Tooltip, UserProfileStore } from "@webpack/common";
-import { User } from "discord-types/general";
 
 import { VerifiedIcon } from "./VerifiedIcon";
 
-const useLegacyPlatformType: (platform: string) => string = findByCodeLazy(".TWITTER_LEGACY:");
-const platforms: { get(type: string): ConnectionPlatform; } = findByPropsLazy("isSupported", "getByUrl");
-const getProfileThemeProps = findByCodeLazy(".getPreviewThemeColors", "primaryColor:");
+const useProfileTheme: (options: {
+    displayProfile?: DisplayProfile | null | undefined;
+    isPreview?: boolean | undefined /* = false */;
+    pendingAvatar?: string | null | undefined;
+    pendingThemeColors?: Parameters<DisplayProfile["getPreviewThemeColors"]>[0];
+    user?: UserRecord | null | undefined;
+}) => { theme: Theme.DARK | Theme.LIGHT; }
+    & ({ primaryColor: number; secondaryColor: number; }
+    | { primaryColor: null; secondaryColor: null; })
+    = findByCodeLazy(".getPreviewThemeColors", "primaryColor:");
+
+const Platforms: {
+    get: (type: PlatformType) => ConnectionPlatform;
+} = findByPropsLazy("isSupported", "getByUrl");
+
+const useLegacyPlatformType: (platform: PlatformType) => PlatformType = findByCodeLazy(".TWITTER_LEGACY:");
 
 const enum Spacing {
     COMPACT,
     COZY,
     ROOMY
 }
+
 const getSpacingPx = (spacing: Spacing | undefined) => (spacing ?? Spacing.COMPACT) * 2 + 4;
 
 const settings = definePluginSettings({
@@ -60,56 +74,51 @@ const settings = definePluginSettings({
     }
 });
 
-interface Connection {
-    type: string;
-    id: string;
-    name: string;
-    verified: boolean;
-}
-
 interface ConnectionPlatform {
-    getPlatformUserUrl(connection: Connection): string;
-    icon: { lightSVG: string, darkSVG: string; };
+    getPlatformUserUrl?: (connection: ProfileConnectedAccountData) => string;
+    icon: { lightSVG: string; darkSVG: string; };
 }
 
 const profilePopoutComponent = ErrorBoundary.wrap(
-    (props: { user: User; displayProfile?: any; }) => (
+    (props: { user: UserRecord; displayProfile?: DisplayProfile; }) => (
         <ConnectionsComponent
             {...props}
             id={props.user.id}
-            theme={getProfileThemeProps(props).theme}
+            theme={useProfileTheme(props).theme}
         />
     ),
     { noop: true }
 );
 
-function ConnectionsComponent({ id, theme }: { id: string, theme: string; }) {
+function ConnectionsComponent({ id, theme }: { id: string; theme: Theme.DARK | Theme.LIGHT; }) {
     const profile = UserProfileStore.getUserProfile(id);
     if (!profile)
         return null;
 
-    const connections: Connection[] = profile.connectedAccounts;
-    if (!connections?.length)
+    const connections = profile.connectedAccounts;
+    if (connections.length <= 0)
         return null;
 
     return (
-        <Flex style={{
-            gap: getSpacingPx(settings.store.iconSpacing),
-            flexWrap: "wrap"
-        }}>
+        <Flex
+            style={{
+                gap: getSpacingPx(settings.store.iconSpacing),
+                flexWrap: "wrap"
+            }}
+        >
             {connections.map(connection => <CompactConnectionComponent connection={connection} theme={theme} />)}
         </Flex>
     );
 }
 
-function CompactConnectionComponent({ connection, theme }: { connection: Connection, theme: string; }) {
-    const platform = platforms.get(useLegacyPlatformType(connection.type));
+function CompactConnectionComponent({ connection, theme }: { connection: ProfileConnectedAccountData; theme: Theme.DARK | Theme.LIGHT; }) {
+    const platform = Platforms.get(useLegacyPlatformType(connection.type));
     const url = platform.getPlatformUserUrl?.(connection);
 
     const img = (
         <img
             aria-label={connection.name}
-            src={theme === "light" ? platform.icon.lightSVG : platform.icon.darkSVG}
+            src={theme === Theme.LIGHT ? platform.icon.lightSVG : platform.icon.darkSVG}
             style={{
                 width: settings.store.iconSize,
                 height: settings.store.iconSize
@@ -131,8 +140,8 @@ function CompactConnectionComponent({ connection, theme }: { connection: Connect
             key={connection.id}
         >
             {tooltipProps =>
-                url
-                    ? <a
+                url ? (
+                    <a
                         {...tooltipProps}
                         className="vc-user-connection"
                         href={url}
@@ -147,13 +156,15 @@ function CompactConnectionComponent({ connection, theme }: { connection: Connect
                     >
                         {img}
                     </a>
-                    : <button
+                ) : (
+                    <button
                         {...tooltipProps}
                         className="vc-user-connection"
-                        onClick={() => copyWithToast(connection.name)}
+                        onClick={() => { copyWithToast(connection.name); }}
                     >
                         {img}
                     </button>
+                )
 
             }
         </Tooltip>

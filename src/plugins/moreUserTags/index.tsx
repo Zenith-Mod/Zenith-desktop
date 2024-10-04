@@ -21,10 +21,10 @@ import { Flex } from "@components/Flex";
 import { Devs } from "@utils/constants";
 import { Margins } from "@utils/margins";
 import definePlugin, { OptionType } from "@utils/types";
+import type { ChannelRecord, GuildRecord, MessageRecord, PermissionOverwriteMap, UserRecord } from "@vencord/discord-types";
 import { findByCodeLazy, findLazy } from "@webpack";
-import { Card, ChannelStore, Forms, GuildStore, PermissionsBits, Switch, TextInput, Tooltip } from "@webpack/common";
-import type { Permissions, RC } from "@webpack/types";
-import type { Channel, Guild, Message, User } from "discord-types/general";
+import { Card, ChannelStore, Forms, GuildStore, Permissions, Switch, TextInput, Tooltip } from "@webpack/common";
+import type { PermissionsKeys, RC } from "@webpack/types";
 
 interface Tag {
     // name used for identifying, must be alphanumeric + underscores
@@ -32,8 +32,8 @@ interface Tag {
     // name shown on the tag itself, can be anything probably; automatically uppercase'd
     displayName: string;
     description: string;
-    permissions?: Permissions[];
-    condition?(message: Message | null, user: User, channel: Channel): boolean;
+    permissions?: PermissionsKeys[];
+    condition?: (message: MessageRecord | undefined, user: UserRecord, channel?: ChannelRecord) => boolean;
 }
 
 interface TagSetting {
@@ -41,29 +41,30 @@ interface TagSetting {
     showInChat: boolean;
     showInNotChat: boolean;
 }
-interface TagSettings {
-    WEBHOOK: TagSetting,
-    OWNER: TagSetting,
-    ADMINISTRATOR: TagSetting,
-    MODERATOR_STAFF: TagSetting,
-    MODERATOR: TagSetting,
-    VOICE_MODERATOR: TagSetting,
-    TRIAL_MODERATOR: TagSetting,
-    [k: string]: TagSetting;
+
+interface TagSettings extends Record<string, TagSetting> {
+    WEBHOOK: TagSetting;
+    OWNER: TagSetting;
+    ADMINISTRATOR: TagSetting;
+    MODERATOR_STAFF: TagSetting;
+    MODERATOR: TagSetting;
+    VOICE_MODERATOR: TagSetting;
+    TRIAL_MODERATOR: TagSetting;
 }
 
 // PermissionStore.computePermissions will not work here since it only gets permissions for the current user
 const computePermissions: (options: {
     user?: { id: string; } | string | null;
-    context?: Guild | Channel | null;
-    overwrites?: Channel["permissionOverwrites"] | null;
+    context?: GuildRecord | ChannelRecord | null;
+    overwrites?: PermissionOverwriteMap | null;
     checkElevated?: boolean /* = true */;
     excludeGuildPermissions?: boolean /* = false */;
 }) => bigint = findByCodeLazy(".getCurrentUser()", ".computeLurkerPermissionsAllowList()");
 
-const Tag = findLazy(m => m.Types?.[0] === "BOT") as RC<{ type?: number, className?: string, useRemSizes?: boolean; }> & { Types: Record<string, number>; };
+const Tag: RC<{ type?: number; className?: string; useRemSizes?: boolean; }> & { Types: Record<string, number>; }
+    = findLazy(m => m.Types?.[0] === "BOT");
 
-const isWebhook = (message: Message, user: User) => !!message?.webhookId && user.isNonUserBot();
+const isWebhook = (message: MessageRecord | undefined, user: UserRecord) => !!message?.webhookId && user.isNonUserBot();
 
 const tags: Tag[] = [
     {
@@ -131,13 +132,13 @@ function SettingsComponent() {
                         type="text"
                         value={tagSettings[t.name]?.text ?? t.displayName}
                         placeholder={`Text on tag (default: ${t.displayName})`}
-                        onChange={v => tagSettings[t.name].text = v}
+                        onChange={v => { tagSettings[t.name].text = v; }}
                         className={Margins.bottom16}
                     />
 
                     <Switch
                         value={tagSettings[t.name]?.showInChat ?? true}
-                        onChange={v => tagSettings[t.name].showInChat = v}
+                        onChange={v => { tagSettings[t.name].showInChat = v; }}
                         hideBorder
                     >
                         Show in messages
@@ -145,7 +146,7 @@ function SettingsComponent() {
 
                     <Switch
                         value={tagSettings[t.name]?.showInNotChat ?? true}
-                        onChange={v => tagSettings[t.name].showInNotChat = v}
+                        onChange={v => { tagSettings[t.name].showInNotChat = v; }}
                         hideBorder
                     >
                         Show in member list and profiles
@@ -267,12 +268,12 @@ export default definePlugin({
         };
     },
 
-    getPermissions(user: User, channel: Channel): string[] {
-        const guild = GuildStore.getGuild(channel?.guild_id);
+    getPermissions(user: UserRecord, channel: ChannelRecord): string[] {
+        const guild = GuildStore.getGuild(channel.guild_id);
         if (!guild) return [];
 
         const permissions = computePermissions({ user, context: guild, overwrites: channel.permissionOverwrites });
-        return Object.entries(PermissionsBits)
+        return Object.entries(Permissions)
             .map(([perm, permInt]) =>
                 permissions & permInt ? perm : ""
             )
@@ -280,16 +281,16 @@ export default definePlugin({
     },
 
     getTagTypes() {
-        const obj = {};
+        const obj: Record<string, number> & Record<number, string> = {};
         let i = 100;
-        tags.forEach(({ name }) => {
+        for (const { name } of tags) {
             obj[name] = ++i;
             obj[i] = name;
             obj[`${name}-BOT`] = ++i;
             obj[i] = `${name}-BOT`;
             obj[`${name}-OP`] = ++i;
             obj[i] = `${name}-OP`;
-        });
+        }
         return obj;
     },
 
@@ -297,7 +298,7 @@ export default definePlugin({
 
     getTagText(passedTagName: string, strings: Record<string, string>) {
         if (!passedTagName) return strings.APP_TAG;
-        const [tagName, variant] = passedTagName.split("-");
+        const [tagName, variant] = passedTagName.split("-", 2);
         const tag = tags.find(({ name }) => tagName === name);
         if (!tag) return strings.APP_TAG;
         if (variant === "BOT" && tagName !== "WEBHOOK" && this.settings.store.dontShowForBots) return strings.APP_TAG;
@@ -316,9 +317,9 @@ export default definePlugin({
     getTag({
         message, user, channelId, origType, location, channel
     }: {
-        message?: Message,
-        user: User & { isClyde(): boolean; },
-        channel?: Channel & { isForumPost(): boolean; isMediaPost(): boolean; },
+        message?: MessageRecord;
+        user?: UserRecord;
+        channel?: ChannelRecord;
         channelId?: string;
         origType?: number;
         location: "chat" | "not-chat";
@@ -326,13 +327,13 @@ export default definePlugin({
         if (!user)
             return null;
         if (location === "chat" && user.id === "1")
-            return Tag.Types.OFFICIAL;
+            return Tag.Types.OFFICIAL!;
         if (user.isClyde())
-            return Tag.Types.AI;
+            return Tag.Types.AI!;
 
         let type = typeof origType === "number" ? origType : null;
 
-        channel ??= ChannelStore.getChannel(channelId!) as any;
+        channel ??= ChannelStore.getChannel(channelId);
         if (!channel) return type;
 
         const settings = this.settings.store;
@@ -346,21 +347,21 @@ export default definePlugin({
             // avoid adding other tags because the owner will always match the condition for them
             if (
                 tag.name !== "OWNER" &&
-                GuildStore.getGuild(channel?.guild_id)?.ownerId === user.id &&
+                GuildStore.getGuild(channel.guild_id)?.ownerId === user.id &&
                 (location === "chat" && !settings.tagSettings.OWNER.showInChat) ||
                 (location === "not-chat" && !settings.tagSettings.OWNER.showInNotChat)
             ) continue;
 
             if (
                 tag.permissions?.some(perm => perms.includes(perm)) ||
-                (tag.condition?.(message!, user, channel))
+                (tag.condition?.(message, user, channel))
             ) {
                 if ((channel.isForumPost() || channel.isMediaPost()) && channel.ownerId === user.id)
-                    type = Tag.Types[`${tag.name}-OP`];
-                else if (user.bot && !isWebhook(message!, user) && !settings.dontShowBotTag)
-                    type = Tag.Types[`${tag.name}-BOT`];
+                    type = Tag.Types[`${tag.name}-OP`]!;
+                else if (user.bot && !isWebhook(message, user) && !settings.dontShowBotTag)
+                    type = Tag.Types[`${tag.name}-BOT`]!;
                 else
-                    type = Tag.Types[tag.name];
+                    type = Tag.Types[tag.name]!;
                 break;
             }
         }

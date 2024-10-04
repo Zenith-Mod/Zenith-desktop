@@ -19,7 +19,7 @@
 import { definePluginSettings } from "@api/Settings";
 import { makeRange } from "@components/PluginSettings/components";
 import { Devs } from "@utils/constants";
-import definePlugin, { OptionType } from "@utils/types";
+import definePlugin, { OptionType, type Patch } from "@utils/types";
 
 const settings = definePluginSettings({
     multiplier: {
@@ -32,19 +32,19 @@ const settings = definePluginSettings({
 });
 
 interface StreamData {
-    audioContext: AudioContext,
-    audioElement: HTMLAudioElement,
-    emitter: any,
+    audioContext: AudioContext;
+    audioElement: HTMLAudioElement;
+    emitter: any;
     // added by this plugin
-    gainNode?: GainNode,
-    id: string,
-    levelNode: AudioWorkletNode,
-    sinkId: string | "default",
-    stream: MediaStream,
-    streamSourceNode?: MediaStreamAudioSourceNode,
-    videoStreamId: string,
-    _mute: boolean,
-    _speakingFlags: number,
+    gainNode?: GainNode;
+    id: string;
+    levelNode: AudioWorkletNode;
+    sinkId: string;
+    stream: MediaStream;
+    streamSourceNode?: MediaStreamAudioSourceNode;
+    videoStreamId: string;
+    _mute: boolean;
+    _speakingFlags: number;
     _volume: number;
 }
 
@@ -59,7 +59,7 @@ export default definePlugin({
         ...[
             ".Messages.USER_VOLUME",
             "currentVolume:"
-        ].map(find => ({
+        ].map<Omit<Patch, "plugin">>(find => ({
             find,
             replacement: {
                 match: /(?<=maxValue:)\i\.\i\?(\d+?):(\d+?)(?=,)/,
@@ -133,8 +133,13 @@ export default definePlugin({
             gain.connect(data.audioContext.destination);
         }
 
-        // @ts-expect-error
-        if (data.sinkId != null && data.sinkId !== data.audioContext.sinkId && "setSinkId" in AudioContext.prototype) {
+        if (
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            data.sinkId != null
+            // @ts-expect-error https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/sinkId
+            && data.sinkId !== data.audioContext.sinkId
+            && "setSinkId" in AudioContext.prototype
+        ) {
             // @ts-expect-error https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/setSinkId
             data.audioContext.setSinkId(data.sinkId);
         }

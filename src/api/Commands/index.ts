@@ -18,15 +18,16 @@
 
 import { Logger } from "@utils/Logger";
 import { makeCodeblock } from "@utils/text";
+import { ApplicationCommandOptionType, ApplicationCommandType } from "@vencord/discord-types";
 
 import { sendBotMessage } from "./commandHelpers";
-import { ApplicationCommandInputType, ApplicationCommandOptionType, ApplicationCommandType, Argument, Command, CommandContext, Option } from "./types";
+import { ApplicationCommandInputType, type Argument, type Command, type CommandContext, type Option } from "./types";
 
 export * from "./commandHelpers";
 export * from "./types";
 
-export let BUILT_IN: Command[];
-export const commands = {} as Record<string, Command>;
+export let BUILT_IN: Command[] | undefined;
+export const commands: Record<string, Command> = {};
 
 // hack for plugins being evaluated before we can grab these from webpack
 const OptPlaceholder = Symbol("OptionalMessageOption") as any as Option;
@@ -47,8 +48,8 @@ export let RequiredMessageOption: Option = ReqPlaceholder;
 export const _init = function (cmds: Command[]) {
     try {
         BUILT_IN = cmds;
-        OptionalMessageOption = cmds.find(c => (c.untranslatedName || c.displayName) === "shrug")!.options![0];
-        RequiredMessageOption = cmds.find(c => (c.untranslatedName || c.displayName) === "me")!.options![0];
+        OptionalMessageOption = cmds.find(c => (c.untranslatedName || c.displayName) === "shrug")!.options![0]!;
+        RequiredMessageOption = cmds.find(c => (c.untranslatedName || c.displayName) === "me")!.options![0]!;
     } catch (e) {
         new Logger("CommandsAPI").error("Failed to load CommandsApi", e, " - cmds is", cmds);
     }
@@ -59,7 +60,7 @@ export const _handleCommand = function (cmd: Command, args: Argument[], ctx: Com
     if (!cmd.isVencordCommand)
         return cmd.execute(args, ctx);
 
-    const handleError = (err: any) => {
+    function handleError(err: any) {
         // TODO: cancel send if cmd.inputType === BUILT_IN_TEXT
         const msg = `An Error occurred while executing command "${cmd.name}"`;
         const reason = err instanceof Error ? err.stack || err.message : String(err);
@@ -71,13 +72,14 @@ export const _handleCommand = function (cmd: Command, args: Argument[], ctx: Com
                 username: "Vencord"
             }
         });
-    };
+    }
 
     try {
         const res = cmd.execute(args, ctx);
         return res instanceof Promise ? res.catch(handleError) : res;
     } catch (err) {
-        return handleError(err);
+        handleError(err);
+        return;
     }
 } as never;
 
@@ -93,9 +95,9 @@ export function prepareOption<O extends Option | Command>(opt: O): O {
         // See comment above Placeholders
         if (opt === OptPlaceholder) opts[i] = OptionalMessageOption;
         else if (opt === ReqPlaceholder) opts[i] = RequiredMessageOption;
-        opt.choices?.forEach(x => x.displayName ||= x.name);
+        opt.choices?.forEach(x => { x.displayName ||= x.name; });
 
-        prepareOption(opts[i]);
+        prepareOption(opts[i]!);
     });
     return opt;
 }
@@ -104,28 +106,28 @@ export function prepareOption<O extends Option | Command>(opt: O): O {
 // TODO: This probably doesn't support nested subcommands. If that is ever needed,
 // investigate
 function registerSubCommands(cmd: Command, plugin: string) {
-    cmd.options?.forEach(o => {
-        if (o.type !== ApplicationCommandOptionType.SUB_COMMAND)
+    cmd.options?.forEach(opt => {
+        if (opt.type !== ApplicationCommandOptionType.SUB_COMMAND)
             throw new Error("When specifying sub-command options, all options must be sub-commands.");
         const subCmd = {
             ...cmd,
-            ...o,
-            type: ApplicationCommandType.CHAT_INPUT,
-            name: `${cmd.name} ${o.name}`,
-            id: `${o.name}-${cmd.id}`,
-            displayName: `${cmd.name} ${o.name}`,
+            ...opt,
+            type: ApplicationCommandType.CHAT,
+            name: `${cmd.name} ${opt.name}`,
+            id: `${opt.name}-${cmd.id}`,
+            displayName: `${cmd.name} ${opt.name}`,
             subCommandPath: [{
-                name: o.name,
-                type: o.type,
-                displayName: o.name
+                name: opt.name,
+                type: opt.type,
+                displayName: opt.name
             }],
             rootCommand: cmd
         };
-        registerCommand(subCmd as any, plugin);
+        registerCommand(subCmd, plugin);
     });
 }
 
-export function registerCommand<C extends Command>(command: C, plugin: string) {
+export function registerCommand(command: Command, plugin: string) {
     if (!BUILT_IN) {
         console.warn(
             "[CommandsAPI]",
@@ -143,7 +145,7 @@ export function registerCommand<C extends Command>(command: C, plugin: string) {
     command.untranslatedDescription ??= command.description;
     command.id ??= `-${BUILT_IN.length + 1}`;
     command.applicationId ??= "-1"; // BUILT_IN;
-    command.type ??= ApplicationCommandType.CHAT_INPUT;
+    command.type ??= ApplicationCommandType.CHAT;
     command.inputType ??= ApplicationCommandInputType.BUILT_IN_TEXT;
     command.plugin ||= plugin;
 
@@ -159,11 +161,11 @@ export function registerCommand<C extends Command>(command: C, plugin: string) {
 }
 
 export function unregisterCommand(name: string) {
-    const idx = BUILT_IN.findIndex(c => c.name === name);
+    const idx = BUILT_IN!.findIndex(c => c.name === name);
     if (idx === -1)
         return false;
 
-    BUILT_IN.splice(idx, 1);
+    BUILT_IN!.splice(idx, 1);
     delete commands[name];
 
     return true;

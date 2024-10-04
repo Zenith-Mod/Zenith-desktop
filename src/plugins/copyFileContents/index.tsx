@@ -13,11 +13,16 @@ import { copyWithToast } from "@utils/misc";
 import definePlugin from "@utils/types";
 import { Tooltip, useState } from "@webpack/common";
 
-const CheckMarkIcon = () => {
-    return <svg width="24" height="24" viewBox="0 0 24 24">
-        <path fill="currentColor" d="M21.7 5.3a1 1 0 0 1 0 1.4l-12 12a1 1 0 0 1-1.4 0l-6-6a1 1 0 1 1 1.4-1.4L9 16.58l11.3-11.3a1 1 0 0 1 1.4 0Z"></path>
-    </svg>;
-};
+const CheckMarkIcon = () => (
+    <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+    >
+        <path d="M21.7 5.3a1 1 0 0 1 0 1.4l-12 12a1 1 0 0 1-1.4 0l-6-6a1 1 0 1 1 1.4-1.4L9 16.58l11.3-11.3a1 1 0 0 1 1.4 0Z" />
+    </svg>
+);
 
 export default definePlugin({
     name: "CopyFileContents",
@@ -33,7 +38,7 @@ export default definePlugin({
         }
     ],
 
-    addCopyButton: ErrorBoundary.wrap(({ fileContents, bytesLeft }: { fileContents: string, bytesLeft: number; }) => {
+    addCopyButton: ErrorBoundary.wrap(({ fileContents, bytesLeft }: { fileContents: string; bytesLeft: number; }) => {
         const [recentlyCopied, setRecentlyCopied] = useState(false);
 
         return (
@@ -47,11 +52,16 @@ export default definePlugin({
                             if (!recentlyCopied && bytesLeft <= 0) {
                                 copyWithToast(fileContents);
                                 setRecentlyCopied(true);
-                                setTimeout(() => setRecentlyCopied(false), 2000);
+                                setTimeout(() => { setRecentlyCopied(false); }, 2000);
                             }
                         }}
                     >
-                        {recentlyCopied ? <CheckMarkIcon /> : bytesLeft > 0 ? <NoEntrySignIcon color="var(--channel-icon)" /> : <CopyIcon />}
+                        {recentlyCopied
+                            ? <CheckMarkIcon />
+                            : bytesLeft > 0
+                                ? <NoEntrySignIcon color="var(--channel-icon)" />
+                                : <CopyIcon />
+                        }
                     </div>
                 )}
             </Tooltip>

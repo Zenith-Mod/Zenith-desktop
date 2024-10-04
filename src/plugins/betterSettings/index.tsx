@@ -15,11 +15,11 @@ import type { HTMLAttributes, ReactElement } from "react";
 
 import PluginsSubmenu from "./PluginsSubmenu";
 
-type SettingsEntry = { section: string, label: string; };
+interface SettingsEntry { section: string; label: string; }
 
 const cl = classNameFactory("");
 let Classes: Record<string, string>;
-waitFor(["animating", "baseLayer", "bg", "layer", "layers"], m => Classes = m);
+waitFor(["animating", "baseLayer", "bg", "layer", "layers"], m => { Classes = m; });
 
 const settings = definePluginSettings({
     disableFade: {
@@ -60,8 +60,8 @@ function Layer({ mode, baseLayer = false, ...props }: LayerProps) {
             ref={containerRef}
             aria-hidden={hidden}
             className={cl({
-                [Classes.layer]: true,
-                [Classes.baseLayer]: baseLayer,
+                [Classes.layer!]: true,
+                [Classes.baseLayer!]: baseLayer,
                 "stop-animations": hidden
             })}
             style={{ opacity: hidden ? 0 : undefined }}
@@ -142,6 +142,7 @@ export default definePlugin({
     // try catch will only catch errors in the Layer function (hence why it's called as a plain function rather than a component), but
     // not in children
     Layer(props: LayerProps) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!FocusLock || !ComponentDispatch || !Classes) {
             new Logger("BetterSettings").error("Failed to find some components");
             return props.children;
@@ -183,8 +184,9 @@ export default definePlugin({
                                     id={label.replace(/\W/, "_")}
                                     label={label}
                                     children={children}
-                                    action={children[0].props.action}
-                                />);
+                                    action={children[0]!.props.action}
+                                />
+                            );
                         } else {
                             return children;
                         }

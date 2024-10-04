@@ -96,9 +96,11 @@ export default definePlugin({
 
     start() {
         if (settings.store.showInMemberList) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             addDecorator("UserVoiceShow", ({ user }) => user == null ? null : <VoiceChannelIndicator userId={user.id} />);
         }
         if (settings.store.showInMessages) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             addDecoration("UserVoiceShow", ({ message }) => message?.author == null ? null : <VoiceChannelIndicator userId={message.author.id} isMessageIndicator />);
         }
     },

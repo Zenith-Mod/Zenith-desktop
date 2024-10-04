@@ -17,11 +17,12 @@
 */
 
 import { Settings, SettingsStore } from "@api/Settings";
+import { Theme } from "@vencord/discord-types";
 import { ThemeStore } from "@webpack/common";
 
 
-let style: HTMLStyleElement;
-let themesStyle: HTMLStyleElement;
+let style: HTMLStyleElement | undefined;
+let themesStyle: HTMLStyleElement | undefined;
 
 function createStyle(id: string) {
     const style = document.createElement("style");
@@ -32,10 +33,9 @@ function createStyle(id: string) {
 
 async function initSystemValues() {
     const values = await VencordNative.themes.getSystemValues();
-    const variables = Object.entries(values)
-        .filter(([, v]) => v !== "#")
-        .map(([k, v]) => `--${k}: ${v};`)
-        .join("");
+    let variables = "";
+    for (const [k, v] of Object.entries(values))
+        if (v !== "#") variables += `--${k}: ${v};`;
 
     createStyle("vencord-os-theme-values").textContent = `:root{${variables}}`;
 }
@@ -45,9 +45,9 @@ export async function toggle(isEnabled: boolean) {
         if (isEnabled) {
             style = createStyle("vencord-custom-css");
             VencordNative.quickCss.addChangeListener(css => {
-                style.textContent = css;
+                style!.textContent = css;
                 // At the time of writing this, changing textContent resets the disabled state
-                style.disabled = !Settings.useQuickCss;
+                style!.disabled = !Settings.useQuickCss;
             });
             style.textContent = await VencordNative.quickCss.get();
         }
@@ -61,17 +61,16 @@ async function initThemes() {
     const { themeLinks, enabledThemes } = Settings;
 
     // "darker" and "midnight" both count as dark
-    const activeTheme = ThemeStore.theme === "light" ? "light" : "dark";
+    const activeTheme = ThemeStore.theme === Theme.LIGHT ? Theme.LIGHT : Theme.DARK;
 
-    const links = themeLinks
-        .map(rawLink => {
-            const match = /^@(light|dark) (.*)/.exec(rawLink);
-            if (!match) return rawLink;
-
+    const links: string[] = [];
+    for (const rawLink of themeLinks) {
+        const match = /^@(light|dark) (.*)/.exec(rawLink);
+        if (match) {
             const [, mode, link] = match;
-            return mode === activeTheme ? link : null;
-        })
-        .filter(link => link !== null);
+            if (mode === activeTheme) links.push(link!);
+        } else links.push(rawLink);
+    }
 
     if (IS_WEB) {
         for (const theme of enabledThemes) {

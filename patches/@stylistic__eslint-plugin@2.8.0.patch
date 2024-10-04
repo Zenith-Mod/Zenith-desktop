@@ -1,0 +1,52 @@
+diff --git a/dist/rules/brace-style.js b/dist/rules/brace-style.js
+index 224d58eb1e9047e572c6e3cecb567a5b69379392..3b6dbdefb1968efdbbe7887bac11baff8bbe2816 100644
+--- a/dist/rules/brace-style.js
++++ b/dist/rules/brace-style.js
+@@ -6,6 +6,38 @@ require('eslint-visitor-keys');
+ require('espree');
+ require('estraverse');
+ 
++function* getAllCommentRanges(sourceCode) {
++  for (const { loc } of sourceCode.getAllComments())
++    if (loc) yield [loc.start.line, loc.end.line];
++}
++
++function createLineSet(length) {
++  return (1n << BigInt(length)) - 1n;
++}
++
++function isTokenOnSameLine(left, right, sourceCode) {
++  const leftEnd = left?.loc?.end.line;
++  const rightStart = right?.loc?.start.line;
++  if (leftEnd === rightStart) return true;
++  if (leftEnd !== undefined && rightStart !== undefined) {
++    if (rightStart - leftEnd <= 1) {
++      for (const [start, end] of getAllCommentRanges(sourceCode))
++        if (start === leftEnd || end === rightStart) return true;
++    } else {
++      const targetLines = createLineSet(rightStart - leftEnd - 1);
++      let totalLines = 0n;
++      for (let [start, end] of getAllCommentRanges(sourceCode)) {
++        if (start >= rightStart || end <= leftEnd) continue;
++        start = Math.max(start, leftEnd + 1);
++        end = Math.min(rightStart - 1, end);
++        totalLines |= createLineSet(end - start + 1) << BigInt(start - leftEnd - 1);
++        if (totalLines === targetLines) return true;
++      }
++    }
++  }
++  return false;
++}
++
+ var _baseRule = utils.createRule({
+   name: "brace-style",
+   package: "js",
+@@ -90,7 +122,7 @@ var _baseRule = utils.createRule({
+     }
+     function validateCurlyBeforeKeyword(curlyToken) {
+       const keywordToken = sourceCode.getTokenAfter(curlyToken);
+-      if (style === "1tbs" && !utils.isTokenOnSameLine(curlyToken, keywordToken)) {
++      if (style === "1tbs" && !isTokenOnSameLine(curlyToken, keywordToken, sourceCode)) {
+         context.report({
+           node: curlyToken,
+           messageId: "nextLineClose",

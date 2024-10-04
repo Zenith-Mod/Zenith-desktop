@@ -1,36 +1,32 @@
 {
-    "compilerOptions": {
-        "resolveJsonModule": true,
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "allowJs": true,
-        "lib": [
-            "DOM",
-            "DOM.Iterable",
-            "esnext",
-            "esnext.array",
-            "esnext.asynciterable",
-            "esnext.symbol"
-        ],
-        "module": "esnext",
-        "moduleResolution": "node",
-        "strict": true,
-        "noImplicitAny": false,
-        "target": "ESNEXT",
-        "jsx": "preserve",
+    "include": ["browser", "src"],
 
-        "baseUrl": "./src/",
+    "compilerOptions": {
+        "noUncheckedIndexedAccess": true,
+        "noUncheckedSideEffectImports": true,
+        "strict": true,
+
+        // 'baseUrl' allows module specifiers that are invalid in emitted declarations: https://github.com/microsoft/TypeScript/issues/34749
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
         "paths": {
-            "@main/*": ["./main/*"],
-            "@api/*": ["./api/*"],
-            "@components/*": ["./components/*"],
-            "@utils/*": ["./utils/*"],
-            "@shared/*": ["./shared/*"],
-            "@webpack/types": ["./webpack/common/types"],
-            "@webpack/common": ["./webpack/common"],
-            "@webpack": ["./webpack/webpack"]
+            "@api": ["./src/api"],
+            "@api/*": ["./src/api/*"],
+            "@components": ["./src/components"],
+            "@components/*": ["./src/components/*"],
+            "@main": ["./src/main"],
+            "@main/*": ["./src/main/*"],
+            "@shared/*": ["./src/shared/*"],
+            "@utils": ["./src/utils"],
+            "@utils/*": ["./src/utils/*"],
+            "@webpack": ["./src/webpack/webpack"],
+            "@webpack/types": ["./src/webpack/common/types"],
+            "@webpack/common": ["./src/webpack/common"]
         },
+        "resolveJsonModule": true,
+
+        "emitDeclarationOnly": true,
+        "outDir": "dist",
 
         "plugins": [
             // Transform paths in output .d.ts files (Include this line if you output declarations files)
@@ -39,7 +35,17 @@
                 "afterDeclarations": true
             }
         ],
-        "outDir": "who-fucking-cares-dude"
-    },
-    "include": ["src/**/*", "browser/**/*", "scripts/**/*", "eslint.config.mjs"],
+
+        "esModuleInterop": true,
+
+        "jsx": "preserve",
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ESNext"
+        ],
+        "target": "ESNext",
+
+        "composite": true
+    }
 }

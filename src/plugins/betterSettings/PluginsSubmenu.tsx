@@ -6,17 +6,17 @@
 
 import { openPluginModal } from "@components/PluginSettings/PluginModal";
 import { isObjectEmpty } from "@utils/misc";
-import { Alerts, i18n, Menu, useMemo, useState } from "@webpack/common";
+import { AlertActionCreators, i18n, Menu, useMemo, useState } from "@webpack/common";
 
 import Plugins from "~plugins";
 
 function onRestartNeeded() {
-    Alerts.show({
+    AlertActionCreators.show({
         title: "Restart required",
         body: <p>You have changed settings that require a restart.</p>,
         confirmText: "Restart now",
         cancelText: "Later!",
-        onConfirm: () => location.reload()
+        onConfirm: () => { location.reload(); }
     });
 }
 
@@ -42,7 +42,7 @@ export default function PluginsSubmenu() {
         <>
             <Menu.MenuControlItem
                 id="vc-plugins-search"
-                control={(props, ref) => (
+                control={(props: any, ref: any) => (
                     <Menu.MenuSearchControl
                         {...props}
                         query={query}
@@ -60,7 +60,7 @@ export default function PluginsSubmenu() {
                     key={p.name}
                     id={p.name}
                     label={p.name}
-                    action={() => openPluginModal(p, onRestartNeeded)}
+                    action={() => { openPluginModal(p, onRestartNeeded); }}
                 />
             ))}
         </>

@@ -6,6 +6,7 @@
 
 import { getCurrentChannel } from "@utils/discord";
 import { isObjectEmpty } from "@utils/misc";
+import { StatusType } from "@vencord/discord-types";
 import { SelectedChannelStore, Tooltip, useEffect, useStateFromStores } from "@webpack/common";
 
 import { ChannelMemberStore, cl, GuildMemberCountStore, numberFormat, ThreadMemberListStore } from ".";
@@ -23,29 +24,31 @@ export function MemberCount({ isTooltip, tooltipGuildId }: { isTooltip?: true; t
 
     let onlineCount = useStateFromStores(
         [OnlineMemberCountStore],
-        () => OnlineMemberCountStore.getCount(guildId)
+        () => OnlineMemberCountStore.getCount(guildId!)
     );
 
     const { groups } = useStateFromStores(
         [ChannelMemberStore],
-        () => ChannelMemberStore.getProps(guildId, currentChannel?.id)
+        () => ChannelMemberStore.getProps(guildId!, currentChannel?.id)
     );
 
     const threadGroups = useStateFromStores(
         [ThreadMemberListStore],
+        // @ts-expect-error
         () => ThreadMemberListStore.getMemberListSections(currentChannel?.id)
     );
 
-    if (!isTooltip && (groups.length >= 1 || groups[0].id !== "unknown")) {
-        onlineCount = groups.reduce((total, curr) => total + (curr.id === "offline" ? 0 : curr.count), 0);
+    if (!isTooltip && (groups.length >= 1 || groups[0]!.id !== StatusType.UNKNOWN)) {
+        onlineCount = groups.reduce((total, curr) => total + (curr.id === StatusType.OFFLINE ? 0 : curr.count), 0);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!isTooltip && threadGroups && !isObjectEmpty(threadGroups)) {
-        onlineCount = Object.values(threadGroups).reduce((total, curr) => total + (curr.sectionId === "offline" ? 0 : curr.userIds.length), 0);
+        onlineCount = Object.values(threadGroups).reduce((total, curr) => total + (curr.sectionId === StatusType.OFFLINE ? 0 : curr.userIds.length), 0);
     }
 
     useEffect(() => {
-        OnlineMemberCountStore.ensureCount(guildId);
+        OnlineMemberCountStore.ensureCount(guildId!);
     }, [guildId]);
 
     if (totalCount == null)

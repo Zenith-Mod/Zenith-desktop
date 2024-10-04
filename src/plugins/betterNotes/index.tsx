@@ -31,7 +31,7 @@ const settings = definePluginSettings({
     noSpellCheck: {
         type: OptionType.BOOLEAN,
         description: "Disable spellcheck in notes",
-        disabled: () => Settings.plugins.BetterNotesBox.hide,
+        disabled: () => Settings.plugins.BetterNotesBox!.hide,
         default: false
     }
 });

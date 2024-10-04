@@ -78,11 +78,9 @@ export default definePlugin({
 
     data: null as UsrbgApiReturn | null,
 
-    settingsAboutComponent: () => {
-        return (
-            <Link href="https://github.com/AutumnVN/usrbg#how-to-request-your-own-usrbg-banner">CLICK HERE TO GET YOUR OWN BANNER</Link>
-        );
-    },
+    settingsAboutComponent: () => (
+        <Link href="https://github.com/AutumnVN/usrbg#how-to-request-your-own-usrbg-banner">CLICK HERE TO GET YOUR OWN BANNER</Link>
+    ),
 
     getVoiceBackgroundStyles({ className, participantUserId }: any) {
         if (className.includes("tile_")) {

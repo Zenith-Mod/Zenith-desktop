@@ -19,7 +19,7 @@
 import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { findByPropsLazy } from "@webpack";
-import { ComponentDispatch, FluxDispatcher, NavigationRouter, SelectedGuildStore, SettingsRouter } from "@webpack/common";
+import { ComponentDispatch, FluxDispatcher, RouterUtils, SelectedGuildStore, UserSettingsModalActionCreators } from "@webpack/common";
 
 const KeyBinds = findByPropsLazy("JUMP_TO_GUILD", "SERVER_NEXT");
 
@@ -38,7 +38,8 @@ export default definePlugin({
                 if (!IS_VESKTOP) return;
                 e.preventDefault();
                 if (e.shiftKey) {
-                    if (SelectedGuildStore.getGuildId()) NavigationRouter.transitionToGuild("@me");
+                    if (SelectedGuildStore.getGuildId())
+                        RouterUtils.transitionToGuild("@me");
                     ComponentDispatch.safeDispatch("TOGGLE_DM_CREATE");
                 } else {
                     FluxDispatcher.dispatch({
@@ -55,7 +56,7 @@ export default definePlugin({
                 break;
             case ",":
                 e.preventDefault();
-                SettingsRouter.open("My Account");
+                UserSettingsModalActionCreators.open("My Account");
                 break;
             default:
                 if (e.key >= "1" && e.key <= "9") {

@@ -19,15 +19,17 @@
 import { filters, findByPropsLazy, waitFor } from "@webpack";
 
 import { waitForComponent } from "./internal";
-import * as t from "./types/components";
+import type * as t from "./types/components";
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 export let Forms = {} as {
-    FormTitle: t.FormTitle,
-    FormSection: t.FormSection,
-    FormDivider: t.FormDivider,
-    FormText: t.FormText,
+    FormTitle: t.FormTitle;
+    FormSection: t.FormSection;
+    FormDivider: t.FormDivider;
+    FormText: t.FormText;
 };
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 export let Icons = {} as t.Icons;
 
 export let Card: t.Card;
@@ -53,7 +55,8 @@ export let Avatar: t.Avatar;
 export let FocusLock: t.FocusLock;
 // token lagger real
 /** css colour resolver stuff, no clue what exactly this does, just copied usage from Discord */
-export let useToken: t.useToken;
+export let useToken: t.TokenHook;
+export const tokens: t.Tokens = findByPropsLazy("unsafe_rawColors", "modules");
 
 export const MaskedLink = waitForComponent<t.MaskedLink>("MaskedLink", filters.componentByCode("MASKED_LINK)"));
 export const Timestamp = waitForComponent<t.Timestamp>("Timestamp", filters.byCode(".Messages.MESSAGE_EDITED_TIMESTAMP_A11Y_LABEL.format"));

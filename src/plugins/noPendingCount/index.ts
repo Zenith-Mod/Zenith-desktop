@@ -19,9 +19,10 @@
 import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByPropsLazy } from "@webpack";
+import type { SnapshotStore } from "@vencord/discord-types";
+import { findStoreLazy } from "@webpack";
 
-const MessageRequestStore = findByPropsLazy("getMessageRequestsCount");
+const MessageRequestStore: SnapshotStore & Record<string, any> = findStoreLazy("MessageRequestStore");
 
 const settings = definePluginSettings({
     hideFriendRequestsCount: {
@@ -93,7 +94,5 @@ export default definePlugin({
         }
     ],
 
-    getRealMessageRequestCount() {
-        return MessageRequestStore.getMessageRequestChannelIds().size;
-    }
+    getRealMessageRequestCount: () => MessageRequestStore.getMessageRequestChannelIds().size
 });

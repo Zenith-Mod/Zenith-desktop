@@ -23,19 +23,26 @@ import { classNameFactory } from "@api/Styles";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
+import type { Store } from "@vencord/discord-types";
 import { findStoreLazy } from "@webpack";
-import { FluxStore } from "@webpack/types";
 
 import { MemberCount } from "./MemberCount";
 
-export const GuildMemberCountStore = findStoreLazy("GuildMemberCountStore") as FluxStore & { getMemberCount(guildId?: string): number | null; };
-export const ChannelMemberStore = findStoreLazy("ChannelMemberStore") as FluxStore & {
-    getProps(guildId?: string, channelId?: string): { groups: { count: number; id: string; }[]; };
-};
-export const ThreadMemberListStore = findStoreLazy("ThreadMemberListStore") as FluxStore & {
-    getMemberListSections(channelId?: string): { [sectionId: string]: { sectionId: string; userIds: string[]; }; };
-};
+export const GuildMemberCountStore: Store & {
+    getMemberCount: (guildId?: string | null) => number | null | undefined;
+} = findStoreLazy("GuildMemberCountStore");
 
+export const ChannelMemberStore: Store & {
+    getProps: (guildId: string, channelId?: string | null) => {
+        groups: { count: number; id: string; }[];
+    };
+} = findStoreLazy("ChannelMemberStore");
+
+export const ThreadMemberListStore: Store & {
+    getMemberListSections: (channelId: string) => {
+        [sectionId: string]: { sectionId: string; userIds: string[]; };
+    };
+} = findStoreLazy("ThreadMemberListStore");
 
 const settings = definePluginSettings({
     toolTip: {

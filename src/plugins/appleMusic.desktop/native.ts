@@ -12,38 +12,38 @@ import type { TrackData } from ".";
 const exec = promisify(execFile);
 
 async function applescript(cmds: string[]) {
-    const { stdout } = await exec("osascript", cmds.map(c => ["-e", c]).flat());
+    const { stdout } = await exec("osascript", cmds.flatMap(c => ["-e", c]));
     return stdout;
 }
 
 interface RemoteData {
-    appleMusicLink?: string,
-    songLink?: string,
-    albumArtwork?: string,
+    appleMusicLink?: string;
+    songLink?: string;
+    albumArtwork?: string;
     artistArtwork?: string;
 }
 
-let cachedRemoteData: { id: string, data: RemoteData; } | { id: string, failures: number; } | null = null;
+let cachedRemoteData: { id: string; data: RemoteData; } | { id: string; failures: number; } | null = null;
 
 const APPLE_MUSIC_BUNDLE_REGEX = /<script type="module" crossorigin src="([a-zA-Z0-9.\-/]+)"><\/script>/;
 const APPLE_MUSIC_TOKEN_REGEX = /\w+="([A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*)",\w+="x-apple-jingle-correlation-key"/;
 
-let cachedToken: string | undefined = undefined;
+let cachedToken: string | undefined;
 
-const getToken = async () => {
+async function getToken() {
     if (cachedToken) return cachedToken;
 
-    const html = await fetch("https://music.apple.com/").then(r => r.text());
-    const bundleUrl = new URL(html.match(APPLE_MUSIC_BUNDLE_REGEX)![1], "https://music.apple.com/");
+    const html = await (await fetch("https://music.apple.com/")).text();
+    const bundleUrl = new URL(html.match(APPLE_MUSIC_BUNDLE_REGEX)![1]!, "https://music.apple.com/");
 
-    const bundle = await fetch(bundleUrl).then(r => r.text());
-    const token = bundle.match(APPLE_MUSIC_TOKEN_REGEX)![1];
+    const bundle = await (await fetch(bundleUrl)).text();
+    const [, token] = bundle.match(APPLE_MUSIC_TOKEN_REGEX)!;
 
     cachedToken = token;
-    return token;
-};
+    return token!;
+}
 
-async function fetchRemoteData({ id, name, artist, album }: { id: string, name: string, artist: string, album: string; }) {
+async function fetchRemoteData({ id, name, artist, album }: { id: string; name: string; artist: string; album: string; }) {
     if (id === cachedRemoteData?.id) {
         if ("data" in cachedRemoteData) return cachedRemoteData.data;
         if ("failures" in cachedRemoteData && cachedRemoteData.failures >= 5) return null;
@@ -61,7 +61,7 @@ async function fetchRemoteData({ id, name, artist, album }: { id: string, name: 
 
         const token = await getToken();
 
-        const songData = await fetch(dataUrl, {
+        const [songData] = (await (await fetch(dataUrl, {
             headers: {
                 "accept": "*/*",
                 "accept-language": "en-US,en;q=0.9",
@@ -69,9 +69,7 @@ async function fetchRemoteData({ id, name, artist, album }: { id: string, name: 
                 "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
                 "origin": "https://music.apple.com",
             },
-        })
-            .then(r => r.json())
-            .then(data => data.results.song.data[0]);
+        })).json()).results.song.data;
 
         cachedRemoteData = {
             id,
@@ -97,16 +95,16 @@ async function fetchRemoteData({ id, name, artist, album }: { id: string, name: 
 export async function fetchTrackData(): Promise<TrackData | null> {
     try {
         await exec("pgrep", ["^Music$"]);
-    } catch (error) {
+    } catch {
         return null;
     }
 
-    const playerState = await applescript(['tell application "Music"', "get player state", "end tell"])
-        .then(out => out.trim());
+    const playerState = (await applescript(['tell application "Music"', "get player state", "end tell"])).trim();
     if (playerState !== "playing") return null;
 
-    const playerPosition = await applescript(['tell application "Music"', "get player position", "end tell"])
-        .then(text => Number.parseFloat(text.trim()));
+    const playerPosition = parseFloat(
+        await applescript(['tell application "Music"', "get player position", "end tell"])
+    );
 
     const stdout = await applescript([
         'set output to ""',
@@ -121,10 +119,10 @@ export async function fetchTrackData(): Promise<TrackData | null> {
         "return output"
     ]);
 
-    const [id, name, album, artist, durationStr] = stdout.split("\n").filter(k => !!k);
-    const duration = Number.parseFloat(durationStr);
+    const [id, name, album, artist, durationStr] = stdout.split("\n").filter(Boolean);
+    const duration = Number.parseFloat(durationStr!);
 
-    const remoteData = await fetchRemoteData({ id, name, artist, album });
+    const remoteData = await fetchRemoteData({ id: id!, name: name!, artist: artist!, album: album! });
 
-    return { name, album, artist, playerPosition, duration, ...remoteData };
+    return { name: name!, album: album!, artist: artist!, playerPosition, duration, ...remoteData };
 }

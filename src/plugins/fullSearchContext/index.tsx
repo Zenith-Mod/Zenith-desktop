@@ -16,14 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { findGroupChildrenByChildId, NavContextMenuPatchCallback } from "@api/ContextMenu";
+import { findGroupChildrenByChildId, type NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { migratePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import { NoopComponent } from "@utils/react";
 import definePlugin from "@utils/types";
+import type { ChannelRecord, MessageRecord } from "@vencord/discord-types";
 import { filters, findByPropsLazy, waitFor } from "@webpack";
 import { ChannelStore, ContextMenuApi, i18n, UserStore } from "@webpack/common";
-import { Message } from "discord-types/general";
+import type { MouseEvent, ReactElement } from "react";
 
 const { useMessageMenu } = findByPropsLazy("useMessageMenu");
 
@@ -32,12 +33,15 @@ interface CopyIdMenuItemProps {
     label: string;
 }
 
-let CopyIdMenuItem: (props: CopyIdMenuItemProps) => React.ReactElement | null = NoopComponent;
-waitFor(filters.componentByCode('"devmode-copy-id-".concat'), m => CopyIdMenuItem = m);
+let CopyIdMenuItem: (props: CopyIdMenuItemProps) => ReactElement | null = NoopComponent;
+waitFor(filters.componentByCode('"devmode-copy-id-".concat'), m => { CopyIdMenuItem = m; });
 
-function MessageMenu({ message, channel, onHeightUpdate }) {
-    const canReport = message.author &&
-        !(message.author.id === UserStore.getCurrentUser().id || message.author.system);
+function MessageMenu({ message, channel, onHeightUpdate }: {
+    message: MessageRecord;
+    channel: ChannelRecord;
+    onHeightUpdate: any;
+}) {
+    const canReport = message.author.id !== UserStore.getCurrentUser()!.id && !message.author.system;
 
     return useMessageMenu({
         navId: "message-actions",
@@ -47,34 +51,34 @@ function MessageMenu({ message, channel, onHeightUpdate }) {
         channel,
         canReport,
         onHeightUpdate,
-        onClose: () => ContextMenuApi.closeContextMenu(),
+        onClose: () => { ContextMenuApi.closeContextMenu(); },
 
         textSelection: "",
         favoriteableType: null,
         favoriteableId: null,
         favoriteableName: null,
-        itemHref: void 0,
-        itemSrc: void 0,
-        itemSafeSrc: void 0,
-        itemTextContent: void 0,
+        itemHref: undefined,
+        itemSrc: undefined,
+        itemSafeSrc: undefined,
+        itemTextContent: undefined,
 
         isFullSearchContextMenu: true
     });
 }
 
 interface MessageActionsProps {
-    message: Message;
+    message: MessageRecord;
     isFullSearchContextMenu?: boolean;
 }
 
-const contextMenuPatch: NavContextMenuPatchCallback = (children, props: MessageActionsProps) => {
+const contextMenuPatch = ((children, props?: MessageActionsProps) => {
     if (props?.isFullSearchContextMenu == null) return;
 
     const group = findGroupChildrenByChildId("devmode-copy-id", children, true);
     group?.push(
         CopyIdMenuItem({ id: props.message.author.id, label: i18n.Messages.COPY_ID_AUTHOR })
     );
-};
+}) satisfies NavContextMenuPatchCallback;
 
 migratePluginSettings("FullSearchContext", "SearchReply");
 export default definePlugin({
@@ -90,19 +94,19 @@ export default definePlugin({
         }
     }],
 
-    handleContextMenu(event: React.MouseEvent, message: Message) {
+    handleContextMenu(event: MouseEvent, message: MessageRecord) {
         const channel = ChannelStore.getChannel(message.channel_id);
         if (!channel) return;
 
         event.stopPropagation();
 
-        ContextMenuApi.openContextMenu(event, contextMenuProps =>
+        ContextMenuApi.openContextMenu(event, contextMenuProps => (
             <MessageMenu
                 message={message}
                 channel={channel}
                 onHeightUpdate={contextMenuProps.onHeightUpdate}
             />
-        );
+        ));
     },
 
     contextMenus: {

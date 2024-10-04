@@ -21,12 +21,12 @@ import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { ChannelRouter, SelectedChannelStore, SelectedGuildStore } from "@webpack/common";
 
-export interface LogoutEvent {
+export interface LogoutAction {
     type: "LOGOUT";
     isSwitchingAccount: boolean;
 }
 
-interface ChannelSelectEvent {
+interface ChannelSelectAction {
     type: "CHANNEL_SELECT";
     channelId: string | null;
     guildId: string | null;
@@ -46,8 +46,8 @@ export default definePlugin({
     authors: [Devs.Nuckyz],
 
     flux: {
-        LOGOUT(e: LogoutEvent) {
-            ({ isSwitchingAccount } = e);
+        LOGOUT(action: LogoutAction) {
+            ({ isSwitchingAccount } = action);
         },
 
         CONNECTION_OPEN() {
@@ -59,14 +59,14 @@ export default definePlugin({
             }
         },
 
-        async CHANNEL_SELECT({ guildId, channelId }: ChannelSelectEvent) {
-            if (isSwitchingAccount) return;
-
-            previousCache = {
-                guildId,
-                channelId
-            };
-            await DataStore.set("KeepCurrentChannel_previousData", previousCache);
+        async CHANNEL_SELECT({ guildId, channelId }: ChannelSelectAction) {
+            if (!isSwitchingAccount) {
+                previousCache = {
+                    guildId,
+                    channelId
+                };
+                await DataStore.set("KeepCurrentChannel_previousData", previousCache);
+            }
         }
     },
 

@@ -57,6 +57,7 @@ export default definePlugin({
     startAt: StartAt.Init,
     start() {
         logAllow.clear();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         this.settings.store.whitelistedLoggers?.split(";").map(x => x.trim()).forEach(logAllow.add.bind(logAllow));
     },
 

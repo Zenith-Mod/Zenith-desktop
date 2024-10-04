@@ -19,16 +19,16 @@
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
+import { GuildFeature } from "@vencord/discord-types";
 import { Constants, GuildStore, i18n, RestAPI } from "@webpack/common";
 
 function showDisableInvites(guildId: string) {
-    // @ts-ignore
-    return !GuildStore.getGuild(guildId).hasFeature("INVITES_DISABLED");
+    return !GuildStore.getGuild(guildId)!.hasFeature(GuildFeature.INVITES_DISABLED);
 }
 
 function disableInvites(guildId: string) {
-    const guild = GuildStore.getGuild(guildId);
-    const features = [...guild.features, "INVITES_DISABLED"];
+    const guild = GuildStore.getGuild(guildId)!;
+    const features = [...guild.features, GuildFeature.INVITES_DISABLED];
     RestAPI.patch({
         url: Constants.Endpoints.GUILD(guildId),
         body: { features },
@@ -58,15 +58,20 @@ export default definePlugin({
         }
     ],
 
-    renderInvitesLabel: ErrorBoundary.wrap(({ guildId, setChecked }) => {
-        return (
-            <div>
-                {i18n.Messages.GUILD_INVITE_DISABLE_ACTION_SHEET_DESCRIPTION}
-                {showDisableInvites(guildId) && <a role="button" onClick={() => {
-                    setChecked(true);
-                    disableInvites(guildId);
-                }}> Pause Indefinitely.</a>}
-            </div>
-        );
-    })
+    renderInvitesLabel: ErrorBoundary.wrap(({ guildId, setChecked }) => (
+        <div>
+            {i18n.Messages.GUILD_INVITE_DISABLE_ACTION_SHEET_DESCRIPTION}
+            {showDisableInvites(guildId) && (
+                <a
+                    role="button"
+                    onClick={() => {
+                        setChecked(true);
+                        disableInvites(guildId);
+                    }}
+                >
+                    Pause Indefinitely.
+                </a>
+            )}
+        </div>
+    ))
 });
