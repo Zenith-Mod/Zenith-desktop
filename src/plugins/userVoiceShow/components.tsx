@@ -7,24 +7,24 @@
 import { classNameFactory } from "@api/Styles";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { classes } from "@utils/misc";
-import { filters, findByCodeLazy, findByPropsLazy, findComponentByCodeLazy, findStoreLazy, mapMangledModuleLazy } from "@webpack";
+import { filters, findByCode, findByProps, findComponentByCode, findProp, findStore, mapMangledModule } from "@webpack";
 import { ChannelRouter, ChannelStore, GuildStore, IconUtils, match, P, PermissionsBits, PermissionStore, React, showToast, Text, Toasts, Tooltip, useMemo, UserStore, useStateFromStores } from "@webpack/common";
 import { Channel } from "discord-types/general";
 
 const cl = classNameFactory("vc-uvs-");
 
-const { selectVoiceChannel } = findByPropsLazy("selectVoiceChannel", "selectChannel");
-const { useChannelName } = mapMangledModuleLazy(".Messages.GROUP_DM_ALONE", {
+const selectVoiceChannel = findProp("selectVoiceChannel", "selectChannel");
+const { useChannelName } = mapMangledModule(".Messages.GROUP_DM_ALONE", {
     useChannelName: filters.byCode("()=>null==")
 });
-const getDMChannelIcon = findByCodeLazy(".getChannelIconURL({");
-const VoiceStateStore = findStoreLazy("VoiceStateStore");
+const getDMChannelIcon = findByCode(".getChannelIconURL({");
+const VoiceStateStore = findStore("VoiceStateStore");
 
-const UserSummaryItem = findComponentByCodeLazy("defaultRenderUser", "showDefaultAvatarsForNullUsers");
-const Avatar = findComponentByCodeLazy(".status)/2):0");
-const GroupDMAvatars = findComponentByCodeLazy(".AvatarSizeSpecs[", "getAvatarURL");
+const UserSummaryItem = findComponentByCode("defaultRenderUser", "showDefaultAvatarsForNullUsers");
+const Avatar = findComponentByCode(".status)/2):0");
+const GroupDMAvatars = findComponentByCode(".AvatarSizeSpecs[", "getAvatarURL");
 
-const ActionButtonClasses = findByPropsLazy("actionButton", "highlight");
+const ActionButtonClasses = findByProps("actionButton", "highlight");
 
 interface IconProps extends React.ComponentPropsWithoutRef<"div"> {
     size?: number;

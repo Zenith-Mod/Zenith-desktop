@@ -19,6 +19,10 @@
 import { LoDashStatic } from "lodash";
 
 declare global {
+    type AnyRecord = Record<PropertyKey, any>;
+    type AnyComponentType<P extends AnyRecord = AnyRecord> = React.ComponentType<P & AnyRecord> & AnyRecord;
+    type AnyComponentTypeWithChildren<P extends AnyRecord = AnyRecord> = AnyComponentType<React.PropsWithChildren<P>>;
+
     /**
      * This exists only at build time, so references to it in patches should insert it
      * via String interpolation OR use different replacement code based on this
@@ -64,13 +68,8 @@ declare global {
     export var Vesktop: any;
     export var VesktopNative: any;
 
-    interface Window {
-        webpackChunkdiscord_app: {
-            push(chunk: any): any;
-            pop(): any;
-        };
+    interface Window extends AnyRecord {
         _: LoDashStatic;
-        [k: string]: any;
     }
 }
 

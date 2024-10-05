@@ -16,10 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { findByPropsLazy, findComponentByCodeLazy } from "@webpack";
-import type { ComponentType, PropsWithChildren, ReactNode, Ref } from "react";
+import { findByProps, findComponentByCode } from "@webpack";
 
-import { LazyComponent } from "./react";
+import { NoopComponent } from "./react";
 
 export const enum ModalSize {
     SMALL = "small",
@@ -47,10 +46,10 @@ export interface ModalOptions {
     onCloseCallback?: (() => void);
 }
 
-type RenderFunction = (props: ModalProps) => ReactNode;
+type RenderFunction = (props: ModalProps) => React.ReactNode;
 
-export const Modals = findByPropsLazy("ModalRoot", "ModalCloseButton") as {
-    ModalRoot: ComponentType<PropsWithChildren<{
+type Modals = {
+    ModalRoot: AnyComponentTypeWithChildren<{
         transitionState: ModalTransitionState;
         size?: ModalSize;
         role?: "alertdialog" | "dialog";
@@ -59,8 +58,8 @@ export const Modals = findByPropsLazy("ModalRoot", "ModalCloseButton") as {
         "aria-label"?: string;
         "aria-labelledby"?: string;
         onAnimationEnd?(): string;
-    }>>;
-    ModalHeader: ComponentType<PropsWithChildren<{
+    }>;
+    ModalHeader: AnyComponentTypeWithChildren<{
         /** Flex.Justify.START */
         justify?: string;
         /** Flex.Direction.HORIZONTAL */
@@ -72,14 +71,13 @@ export const Modals = findByPropsLazy("ModalRoot", "ModalCloseButton") as {
         separator?: boolean;
 
         className?: string;
-    }>>;
+    }>;
     /** This also accepts Scroller props but good luck with that */
-    ModalContent: ComponentType<PropsWithChildren<{
+    ModalContent: AnyComponentTypeWithChildren<{
         className?: string;
-        scrollerRef?: Ref<HTMLElement>;
-        [prop: string]: any;
-    }>>;
-    ModalFooter: ComponentType<PropsWithChildren<{
+        scrollerRef?: React.Ref<HTMLElement>;
+    }>;
+    ModalFooter: AnyComponentTypeWithChildren<{
         /** Flex.Justify.START */
         justify?: string;
         /** Flex.Direction.HORIZONTAL_REVERSE */
@@ -91,8 +89,8 @@ export const Modals = findByPropsLazy("ModalRoot", "ModalCloseButton") as {
         separator?: boolean;
 
         className?: string;
-    }>>;
-    ModalCloseButton: ComponentType<{
+    }>;
+    ModalCloseButton: AnyComponentType<{
         focusProps?: any;
         onClick(): void;
         withCircleBackground?: boolean;
@@ -101,7 +99,20 @@ export const Modals = findByPropsLazy("ModalRoot", "ModalCloseButton") as {
     }>;
 };
 
-export type ImageModal = ComponentType<{
+
+export let ModalRoot: Modals["ModalRoot"] = NoopComponent;
+export let ModalHeader: Modals["ModalHeader"] = NoopComponent;
+export let ModalContent: Modals["ModalContent"] = NoopComponent;
+export let ModalFooter: Modals["ModalFooter"] = NoopComponent;
+export let ModalCloseButton: Modals["ModalCloseButton"] = NoopComponent;
+
+export const Modals = findByProps<Modals>("ModalRoot", "ModalCloseButton", (m: Modals) => {
+    ({ ModalRoot, ModalHeader, ModalContent, ModalFooter, ModalCloseButton } = m);
+
+    return m;
+});
+
+export type ImageModalProps = {
     className?: string;
     src: string;
     placeholder: string;
@@ -110,24 +121,18 @@ export type ImageModal = ComponentType<{
     height?: number;
     animated?: boolean;
     responsive?: boolean;
-    renderLinkComponent(props: any): ReactNode;
-    renderForwardComponent(props: any): ReactNode;
+    renderLinkComponent(props: any): React.ReactNode;
+    renderForwardComponent(props: any): React.ReactNode;
     maxWidth?: number;
     maxHeight?: number;
     shouldAnimate?: boolean;
     onClose?(): void;
     shouldHideMediaOptions?: boolean;
-}>;
+};
 
-export const ImageModal = findComponentByCodeLazy(".MEDIA_MODAL_CLOSE", "responsive") as ImageModal;
+export const ImageModal = findComponentByCode<ImageModalProps>(".MEDIA_MODAL_CLOSE", "responsive");
 
-export const ModalRoot = LazyComponent(() => Modals.ModalRoot);
-export const ModalHeader = LazyComponent(() => Modals.ModalHeader);
-export const ModalContent = LazyComponent(() => Modals.ModalContent);
-export const ModalFooter = LazyComponent(() => Modals.ModalFooter);
-export const ModalCloseButton = LazyComponent(() => Modals.ModalCloseButton);
-
-const ModalAPI = findByPropsLazy("openModalLazy");
+const ModalAPI = findByProps("openModalLazy");
 
 /**
  * Wait for the render promise to resolve, then open a modal with it.

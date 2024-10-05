@@ -25,15 +25,15 @@ import { CopyIcon, LinkIcon } from "@components/Icons";
 import { Devs } from "@utils/constants";
 import { copyWithToast } from "@utils/misc";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByCodeLazy, findByPropsLazy } from "@webpack";
+import { findByCode, findByProps } from "@webpack";
 import { Tooltip, UserProfileStore } from "@webpack/common";
 import { User } from "discord-types/general";
 
 import { VerifiedIcon } from "./VerifiedIcon";
 
-const useLegacyPlatformType: (platform: string) => string = findByCodeLazy(".TWITTER_LEGACY:");
-const platforms: { get(type: string): ConnectionPlatform; } = findByPropsLazy("isSupported", "getByUrl");
-const getProfileThemeProps = findByCodeLazy(".getPreviewThemeColors", "primaryColor:");
+const useLegacyPlatformType: (platform: string) => string = findByCode(".TWITTER_LEGACY:");
+const platforms: { get(type: string): ConnectionPlatform; } = findByProps("isSupported", "getByUrl");
+const getProfileThemeProps = findByCode(".getPreviewThemeColors", "primaryColor:");
 
 const enum Spacing {
     COMPACT,

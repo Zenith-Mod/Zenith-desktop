@@ -9,7 +9,7 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import { getCurrentChannel } from "@utils/discord";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByPropsLazy, findComponentByCodeLazy } from "@webpack";
+import { findByProps, findComponentByCode } from "@webpack";
 import { ContextMenuApi, Menu, useEffect, useRef } from "@webpack/common";
 import { User } from "discord-types/general";
 
@@ -19,11 +19,11 @@ interface UserProfileProps {
     originalPopout: () => React.ReactNode;
 }
 
-const UserProfile = findComponentByCodeLazy("UserProfilePopoutWrapper: user cannot be undefined");
-const styles = findByPropsLazy("accountProfilePopoutWrapper");
+const UserProfile = findComponentByCode("UserProfilePopoutWrapper: user cannot be undefined");
+const styles = findByProps("accountProfilePopoutWrapper");
 
 let openAlternatePopout = false;
-let accountPanelRef: React.MutableRefObject<Record<PropertyKey, any> | null> = { current: null };
+let accountPanelRef: React.MutableRefObject<AnyRecord | null> = { current: null };
 
 const AccountPanelContextMenu = ErrorBoundary.wrap(() => {
     const { prioritizeServerProfile } = settings.use(["prioritizeServerProfile"]);

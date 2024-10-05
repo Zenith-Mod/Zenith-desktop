@@ -10,12 +10,11 @@ import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
-import { findComponentLazy } from "@webpack";
+import { findComponentByCode } from "@webpack";
 import { ChannelStore, GuildMemberStore, i18n, Text, Tooltip } from "@webpack/common";
 import { Message } from "discord-types/general";
-import { FunctionComponent, ReactNode } from "react";
 
-const CountDown = findComponentLazy(m => m.prototype?.render?.toString().includes(".MAX_AGE_NEVER"));
+const CountDown = findComponentByCode(".MAX_AGE_NEVER");
 
 const enum DisplayStyle {
     Tooltip = "tooltip",
@@ -75,7 +74,7 @@ export default definePlugin({
         }
     ],
 
-    TooltipWrapper: ErrorBoundary.wrap(({ message, children, text }: { message: Message; children: FunctionComponent<any>; text: ReactNode; }) => {
+    TooltipWrapper: ErrorBoundary.wrap(({ message, children, text }: { message: Message; children: React.FunctionComponent<AnyRecord>; text: React.ReactNode; }) => {
         if (settings.store.displayStyle === DisplayStyle.Tooltip) return <Tooltip
             children={children}
             text={renderTimeout(message, false)}

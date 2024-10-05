@@ -4,26 +4,51 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { ComponentType } from "react";
-
 import { makeLazy } from "./lazy";
 
-const NoopComponent = () => null;
+export const SYM_LAZY_COMPONENT_INNER = Symbol.for("vencord.lazyComponent.inner");
+
+export type LazyComponentType<P extends AnyRecord = AnyRecord> = React.FunctionComponent<P> & AnyRecord & {
+    [SYM_LAZY_COMPONENT_INNER]: () => AnyComponentType<P> | null;
+};
+export type AnyLazyComponentType<P extends AnyRecord = AnyRecord> = LazyComponentType<P & AnyRecord>;
+export type AnyLazyComponentTypeWithChildren<P extends AnyRecord = AnyRecord> = AnyLazyComponentType<React.PropsWithChildren<P>>;
 
 /**
  * A lazy component. The factory method is called on first render.
- * @param factory Function returning a Component
+ *
+ * @param factory Function returning a component
  * @param attempts How many times to try to get the component before giving up
  * @returns Result of factory function
  */
-export function LazyComponent<T extends object = any>(factory: () => React.ComponentType<T>, attempts = 5) {
-    const get = makeLazy(factory, attempts);
-    const LazyComponent = (props: T) => {
-        const Component = get() ?? NoopComponent;
-        return <Component {...props} />;
+export function LazyComponent<P extends AnyRecord>(factory: () => React.ComponentType<P>, attempts = 5, err: string | (() => string) = `LazyComponent factory failed:\n${factory}`): LazyComponentType<P> {
+    const get = makeLazy(factory, attempts, { isIndirect: true });
+
+    let InnerComponent = null as AnyComponentType<P> | null;
+
+    let lazyFailedLogged = false;
+    const LazyComponent: LazyComponentType<P> = function (props) {
+        if (!get.$$vencordLazyFailed()) {
+            const ResultComponent = get();
+
+            if (ResultComponent != null) {
+                InnerComponent = ResultComponent;
+                Object.assign(LazyComponent, ResultComponent);
+            }
+        }
+
+        if (InnerComponent === null && !lazyFailedLogged) {
+            if (get.$$vencordLazyFailed()) {
+                lazyFailedLogged = true;
+            }
+
+            console.error(typeof err === "string" ? err : err());
+        }
+
+        return InnerComponent && <InnerComponent {...props} />;
     };
 
-    LazyComponent.$$vencordInternal = get;
+    LazyComponent[SYM_LAZY_COMPONENT_INNER] = () => InnerComponent;
 
-    return LazyComponent as ComponentType<T>;
+    return LazyComponent;
 }

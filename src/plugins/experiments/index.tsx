@@ -23,13 +23,13 @@ import { ErrorCard } from "@components/ErrorCard";
 import { Devs } from "@utils/constants";
 import { Margins } from "@utils/margins";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByPropsLazy, findLazy } from "@webpack";
+import { find, findByProps } from "@webpack";
 import { Forms, React } from "@webpack/common";
 
 import hideBugReport from "./hideBugReport.css?managed";
 
-const KbdStyles = findByPropsLazy("key", "combo");
-const BugReporterExperiment = findLazy(m => m?.definition?.id === "2024-09_bug_reporter");
+const KbdStyles = findByProps("key", "combo");
+const BugReporterExperiment = find(m => m?.definition?.id === "2024-09_bug_reporter");
 
 const settings = definePluginSettings({
     toolbarDevMenu: {

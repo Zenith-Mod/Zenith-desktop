@@ -8,14 +8,14 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import { getCurrentChannel } from "@utils/discord";
 import definePlugin from "@utils/types";
-import { findByCodeLazy, findByPropsLazy, findComponentByCodeLazy } from "@webpack";
+import { findByCode, findByProps, findComponentByCode } from "@webpack";
 import { RelationshipStore, Text } from "@webpack/common";
 
-const containerWrapper = findByPropsLazy("memberSinceWrapper");
-const container = findByPropsLazy("memberSince");
-const getCreatedAtDate = findByCodeLazy('month:"short",day:"numeric"');
-const locale = findByPropsLazy("getLocale");
-const Section = findComponentByCodeLazy('"auto":"smooth"', ".section");
+const containerWrapper = findByProps("memberSinceWrapper");
+const container = findByProps("memberSince");
+const getCreatedAtDate = findByCode('month:"short",day:"numeric"');
+const locale = findByProps("getLocale");
+const Section = findComponentByCode('"auto":"smooth"', ".section");
 
 export default definePlugin({
     name: "FriendsSince",

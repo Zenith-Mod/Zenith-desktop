@@ -21,10 +21,10 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { makeRange } from "@components/PluginSettings/components";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByCodeLazy } from "@webpack";
+import { findByCode } from "@webpack";
 import { ChannelStore, GuildMemberStore, GuildStore } from "@webpack/common";
 
-const useMessageAuthor = findByCodeLazy('"Result cannot be null because the message is not null"');
+const useMessageAuthor = findByCode('"Result cannot be null because the message is not null"');
 
 const settings = definePluginSettings({
     chatMentions: {

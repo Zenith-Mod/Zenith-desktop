@@ -24,7 +24,7 @@ import { NotesIcon, OpenExternalIcon } from "@components/Icons";
 import { Devs } from "@utils/constants";
 import { classes } from "@utils/misc";
 import definePlugin from "@utils/types";
-import { findByPropsLazy } from "@webpack";
+import { findByProps } from "@webpack";
 import { Alerts, Button, Menu, Parser, TooltipContainer } from "@webpack/common";
 import { Guild, User } from "discord-types/general";
 
@@ -35,7 +35,7 @@ import { getCurrentUserInfo, readNotification } from "./reviewDbApi";
 import { settings } from "./settings";
 import { showToast } from "./utils";
 
-const RoleButtonClasses = findByPropsLazy("button", "buttonInner", "icon", "banner");
+const RoleButtonClasses = findByProps("button", "buttonInner", "icon", "banner");
 
 const guildPopoutPatch: NavContextMenuPatchCallback = (children, { guild }: { guild: Guild, onClose(): void; }) => {
     if (!guild) return;

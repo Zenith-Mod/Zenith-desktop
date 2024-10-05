@@ -18,13 +18,13 @@
 
 import { getCurrentChannel } from "@utils/discord";
 import { useAwaiter } from "@utils/react";
-import { findStoreLazy } from "@webpack";
+import { findStore } from "@webpack";
 import { UserProfileStore, UserStore } from "@webpack/common";
 
 import { settings } from "./settings";
 import { PronounMapping, Pronouns, PronounsCache, PronounSets, PronounsFormat, PronounSource, PronounsResponse } from "./types";
 
-const UserSettingsAccountStore = findStoreLazy("UserSettingsAccountStore");
+const UserSettingsAccountStore = findStore("UserSettingsAccountStore");
 
 const EmptyPronouns = { pronouns: undefined, source: "", hasPendingPronouns: false } as const satisfies Pronouns;
 

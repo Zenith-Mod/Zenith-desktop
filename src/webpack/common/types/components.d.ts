@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { AnyLazyComponentTypeWithChildren } from "@utils/lazyReact";
 import type { ComponentType, CSSProperties, FunctionComponent, HtmlHTMLAttributes, HTMLProps, KeyboardEvent, MouseEvent, PropsWithChildren, PropsWithRef, ReactNode, Ref } from "react";
 
 import { IconNames } from "./iconNames";
@@ -69,6 +70,13 @@ export type FormText = ComponentType<PropsWithChildren<{
     /** defaults to FormText.Types.DEFAULT */
     type?: string;
 }> & TextProps> & { Types: FormTextTypes; };
+
+export type Forms = {
+    FormTitle: t.FormTitle,
+    FormSection: t.FormSection,
+    FormDivider: t.FormDivider,
+    FormText: t.FormText,
+};
 
 export type Tooltip = ComponentType<{
     text: ReactNode | ComponentType;
@@ -197,7 +205,7 @@ export type Switch = ComponentType<PropsWithChildren<{
     tooltipNote?: ReactNode;
 }>>;
 
-export type Timestamp = ComponentType<PropsWithChildren<{
+export type TimestampProps = PropsWithChildren<{
     timestamp: Date;
     isEdited?: boolean;
 
@@ -208,7 +216,7 @@ export type Timestamp = ComponentType<PropsWithChildren<{
     compact?: boolean;
     isInline?: boolean;
     isVisibleOnlyOnHover?: boolean;
-}>>;
+}>;
 
 export type TextInput = ComponentType<PropsWithChildren<{
     name?: string;
@@ -364,7 +372,7 @@ export type Slider = ComponentType<PropsWithChildren<{
 }>>;
 
 // TODO - type maybe idk probably not that useful other than the constants
-export type Flex = ComponentType<PropsWithChildren<any>> & {
+export type Flex = AnyLazyComponentTypeWithChildren & {
     Align: Record<"START" | "END" | "CENTER" | "STRETCH" | "BASELINE", string>;
     Direction: Record<"VERTICAL" | "HORIZONTAL" | "HORIZONTAL_REVERSE", string>;
     Justify: Record<"START" | "END" | "CENTER" | "BETWEEN" | "AROUND", string>;
@@ -423,6 +431,13 @@ export type Popout = ComponentType<{
 
 export type Dialog = ComponentType<JSX.IntrinsicElements["div"]>;
 
+export type TabBar = ComponentType<PropsWithChildren<any>> & {
+    Header: ComponentType<PropsWithChildren<any>>;
+    Item: ComponentType<PropsWithChildren<any>>;
+    Separator: ComponentType<PropsWithChildren<any>>;
+    Panel: ComponentType<PropsWithChildren<any>>;
+};
+
 type Resolve = (data: { theme: "light" | "dark", saturation: number; }) => {
     hex(): string;
     hsl(): string;
@@ -445,7 +460,7 @@ export type Paginator = ComponentType<{
     hideMaxPage?: boolean;
 }>;
 
-export type MaskedLink = ComponentType<PropsWithChildren<{
+export type MaskedLinkProps = PropsWithChildren<{
     href: string;
     rel?: string;
     target?: string;
@@ -456,7 +471,7 @@ export type MaskedLink = ComponentType<PropsWithChildren<{
     trusted?: boolean;
     messageId?: string;
     channelId?: string;
-}>>;
+}>;
 
 export type ScrollerThin = ComponentType<PropsWithChildren<{
     className?: string;
@@ -505,9 +520,9 @@ type FocusLock = ComponentType<PropsWithChildren<{
     containerRef: RefObject<HTMLElement>;
 }>>;
 
-export type Icon = ComponentType<JSX.IntrinsicElements["svg"] & {
+export type Icon = AnyComponentType<React.ComponentPropsWithoutRef<"svg"> & {
     size?: string;
     colorClass?: string;
-} & Record<string, any>>;
+}>;
 
 export type Icons = Record<IconNames, Icon>;

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { definePluginSettings, Settings } from "@api/Settings";
+import { definePluginSettings } from "@api/Settings";
 import { getUserSettingLazy } from "@api/UserSettings";
 import { ErrorCard } from "@components/ErrorCard";
 import { Link } from "@components/Link";
@@ -26,13 +26,13 @@ import { Margins } from "@utils/margins";
 import { classes } from "@utils/misc";
 import { useAwaiter } from "@utils/react";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByCodeLazy, findComponentByCodeLazy } from "@webpack";
+import { findByCode, findComponentByCode } from "@webpack";
 import { ApplicationAssetUtils, Button, FluxDispatcher, Forms, GuildStore, React, SelectedChannelStore, SelectedGuildStore, UserStore } from "@webpack/common";
 
-const useProfileThemeStyle = findByCodeLazy("profileThemeStyle:", "--profile-gradient-primary-color");
-const ActivityComponent = findComponentByCodeLazy("onOpenGameProfile");
+const useProfileThemeStyle = findByCode("profileThemeStyle:", "--profile-gradient-primary-color");
+const ActivityComponent = findComponentByCode("onOpenGameProfile");
 
-const ShowCurrentGame = getUserSettingLazy<boolean>("status", "showCurrentGame")!;
+const ShowCurrentGame = getUserSettingLazy<boolean>("status", "showCurrentGame");
 
 async function getApplicationAsset(key: string): Promise<string> {
     if (/https?:\/\/(cdn|media)\.discordapp\.(com|net)\/attachments\//.test(key)) return "mp:" + key.replace(/https?:\/\/(cdn|media)\.discordapp\.(com|net)\//, "");
@@ -260,7 +260,7 @@ const settings = definePluginSettings({
 
 function onChange() {
     setRpc(true);
-    if (Settings.plugins.CustomRPC.enabled) setRpc();
+    if (Vencord.Plugins.isPluginEnabled("CustomRPC")) setRpc();
 }
 
 function isStreamLinkDisabled() {

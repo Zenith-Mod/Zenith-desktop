@@ -27,9 +27,8 @@ import { ModalContent, ModalFooter, ModalHeader, ModalProps, ModalRoot, openModa
 import { useAwaiter } from "@utils/react";
 import definePlugin from "@utils/types";
 import { chooseFile } from "@utils/web";
-import { findByPropsLazy, findLazy, findStoreLazy } from "@webpack";
+import { find, findByProps, findStore } from "@webpack";
 import { Button, Card, Constants, FluxDispatcher, Forms, lodash, Menu, MessageActions, PermissionsBits, PermissionStore, RestAPI, SelectedChannelStore, showToast, SnowflakeUtils, Toasts, useEffect, useState } from "@webpack/common";
-import { ComponentType } from "react";
 
 import { VoiceRecorderDesktop } from "./DesktopRecorder";
 import { settings } from "./settings";
@@ -37,11 +36,11 @@ import { cl } from "./utils";
 import { VoicePreview } from "./VoicePreview";
 import { VoiceRecorderWeb } from "./WebRecorder";
 
-const CloudUpload = findLazy(m => m.prototype?.trackUploadFinished);
-const PendingReplyStore = findStoreLazy("PendingReplyStore");
-const OptionClasses = findByPropsLazy("optionName", "optionIcon", "optionLabel");
+const CloudUpload = find(m => m.prototype?.trackUploadFinished);
+const PendingReplyStore = findStore("PendingReplyStore");
+const OptionClasses = findByProps("optionName", "optionIcon", "optionLabel");
 
-export type VoiceRecorder = ComponentType<{
+export type VoiceRecorder = AnyComponentType<{
     setAudioBlob(blob: Blob): void;
     onRecordingChange?(recording: boolean): void;
 }>;

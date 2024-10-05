@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { definePluginSettings, Settings } from "@api/Settings";
+import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import { canonicalizeMatch } from "@utils/patches";
 import definePlugin, { OptionType } from "@utils/types";
@@ -31,7 +31,7 @@ const settings = definePluginSettings({
     noSpellCheck: {
         type: OptionType.BOOLEAN,
         description: "Disable spellcheck in notes",
-        disabled: () => Settings.plugins.BetterNotesBox.hide,
+        disabled: () => settings.store.hide,
         default: false
     }
 });

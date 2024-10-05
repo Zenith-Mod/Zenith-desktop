@@ -19,7 +19,7 @@
 import ErrorBoundary from "@components/ErrorBoundary";
 import { ExpandableHeader } from "@components/ExpandableHeader";
 import { classes } from "@utils/misc";
-import { filters, findBulk, proxyLazyWebpack } from "@webpack";
+import { findByProps } from "@webpack";
 import { i18n, PermissionsBits, Text, Tooltip, useMemo, UserStore } from "@webpack/common";
 import type { Guild, GuildMember } from "discord-types/general";
 
@@ -36,15 +36,9 @@ interface UserPermission {
 
 type UserPermissions = Array<UserPermission>;
 
-const { RoleRootClasses, RoleClasses, RoleBorderClasses } = proxyLazyWebpack(() => {
-    const [RoleRootClasses, RoleClasses, RoleBorderClasses] = findBulk(
-        filters.byProps("root", "expandButton", "collapseButton"),
-        filters.byProps("role", "roleCircle", "roleName"),
-        filters.byProps("roleCircle", "dot", "dotBorderColor")
-    ) as Record<string, string>[];
-
-    return { RoleRootClasses, RoleClasses, RoleBorderClasses };
-});
+const RoleRootClasses = findByProps("root", "expandButton", "collapseButton");
+const RoleClasses = findByProps("role", "roleCircle", "roleName");
+const RoleBorderClasses = findByProps("roleCircle", "dot", "dotBorderColor");
 
 interface FakeRoleProps extends React.HTMLAttributes<HTMLDivElement> {
     text: string;

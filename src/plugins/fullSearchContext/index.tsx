@@ -21,11 +21,11 @@ import { migratePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import { NoopComponent } from "@utils/react";
 import definePlugin from "@utils/types";
-import { filters, findByPropsLazy, waitFor } from "@webpack";
+import { filters, findProp, waitFor } from "@webpack";
 import { ChannelStore, ContextMenuApi, i18n, UserStore } from "@webpack/common";
 import { Message } from "discord-types/general";
 
-const { useMessageMenu } = findByPropsLazy("useMessageMenu");
+const useMessageMenu = findProp("useMessageMenu");
 
 interface CopyIdMenuItemProps {
     id: string;
