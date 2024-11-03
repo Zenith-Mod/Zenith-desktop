@@ -22,6 +22,7 @@ import { getUserSettingLazy } from "@api/UserSettings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Flex } from "@components/Flex";
 import { Link } from "@components/Link";
+import { PluginCard, showRestartAlert, UnavailablePluginCard } from "@components/PluginSettings";
 import { openUpdaterModal } from "@components/VencordSettings/UpdaterTab";
 import { Devs, SUPPORT_CHANNEL_ID } from "@utils/constants";
 import { sendMessage } from "@utils/discord";
@@ -30,13 +31,15 @@ import { Margins } from "@utils/margins";
 import { isPluginDev, tryOrElse } from "@utils/misc";
 import { relaunch } from "@utils/native";
 import { onlyOnce } from "@utils/onlyOnce";
+import { useForceUpdater } from "@utils/react";
 import { makeCodeblock } from "@utils/text";
 import definePlugin from "@utils/types";
 import { checkForUpdates, isOutdated, update } from "@utils/updater";
-import { Alerts, Button, Card, ChannelStore, Forms, GuildMemberStore, Parser, RelationshipStore, showToast, Text, Toasts, UserStore } from "@webpack/common";
+import { Alerts, Button, Card, ChannelStore, Forms, GuildMemberStore, Parser, RelationshipStore, showToast, Text, Toasts, Tooltip, UserStore } from "@webpack/common";
+import { Embed } from "discord-types/general";
 
 import gitHash from "~git-hash";
-import plugins, { PluginMeta } from "~plugins";
+import plugins, { ExcludedPlugins, PluginMeta } from "~plugins";
 
 import SettingsPlugin from "./settings";
 
@@ -146,13 +149,22 @@ export default definePlugin({
 
     settings,
 
-    patches: [{
-        find: ".BEGINNING_DM.format",
-        replacement: {
-            match: /BEGINNING_DM\.format\(\{.+?\}\),(?=.{0,300}(\i)\.isMultiUserDM)/,
-            replace: "$& $self.renderContributorDmWarningCard({ channel: $1 }),"
+    patches: [
+        {
+            find: ".BEGINNING_DM.format",
+            replacement: {
+                match: /BEGINNING_DM\.format\(\{.+?\}\),(?=.{0,300}(\i)\.isMultiUserDM)/,
+                replace: "$& $self.renderContributorDmWarningCard({ channel: $1 }),"
+            },
+        },
+        {
+            find: "this.renderInlineMediaEmbed",
+            replacement: {
+                match: /render\(\).+?this\.props;/,
+                replace: "$&if($self.shouldRenderPluginCard(this.props)){return $self.renderPluginCard({embed:this.props.embed})};"
+            }
         }
-    }],
+    ],
 
     commands: [
         {
@@ -247,6 +259,60 @@ export default definePlugin({
                 Instead, use the Vencord support channel: {Parser.parse("https://discord.com/channels/1015060230222131221/1026515880080842772")}
                 {!ChannelStore.getChannel(SUPPORT_CHANNEL_ID) && " (Click the link to join)"}
             </Card>
+        );
+    }, { noop: true }),
+
+    shouldRenderPluginCard(props) {
+        return (props?.message?.author?.id === VENBOT_USER_ID || props?.embed?.type === "link") && props?.embed?.url?.startsWith("https://vencord.dev/plugins/");
+    },
+
+    renderPluginCard: ErrorBoundary.wrap(({ embed }: { embed: Embed; }) => {
+        const pluginName = new URL(embed.url!).pathname.split("/").pop()!;
+        const plugin = plugins?.[pluginName];
+        const excludedPlugin = ExcludedPlugins[pluginName];
+
+        const onRestartNeeded = () => showRestartAlert(<p>You need to restart Vencord to {Vencord.Plugins.isPluginEnabled(pluginName) ? "enable" : "disable"} {pluginName}!</p>);
+        const update = useForceUpdater();
+
+        if (excludedPlugin || !plugin) {
+            return (
+                <div style={{ width: "40%" }}>
+                    <UnavailablePluginCard
+                        name={pluginName}
+                        description={embed.rawDescription}
+                        key={pluginName}
+                        isMissing={!plugin}
+                    />
+                </div>
+            );
+        }
+
+        return (
+            <div style={{ width: "40%" }}>
+                {plugin.required ? (
+                    <Tooltip text={"This plugin is required for Vencord to function."} key={plugin.name}>
+                        {({ onMouseLeave, onMouseEnter }) => (
+                            <PluginCard
+                                onMouseLeave={onMouseLeave}
+                                onMouseEnter={onMouseEnter}
+                                onRestartNeeded={onRestartNeeded}
+                                update={update}
+                                disabled={true}
+                                plugin={plugin}
+                                key={pluginName}
+                            />
+                        )}
+                    </Tooltip>
+                ) : (
+                    <PluginCard
+                        onRestartNeeded={onRestartNeeded}
+                        disabled={plugin.required ?? false}
+                        update={update}
+                        plugin={plugin}
+                        key={pluginName}
+                    />
+                )}
+            </div>
         );
     }, { noop: true }),
 
