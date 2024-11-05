@@ -22,6 +22,7 @@ import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
 import { Message } from "discord-types/general";
+import {i18n} from "@webpack/common";
 
 const RelationshipStore = findByPropsLazy("getRelationships", "isBlocked");
 
@@ -77,6 +78,7 @@ export default definePlugin({
     },
 
     shouldHide(props: MessageDeleteProps) {
-        return !props?.collapsedReason?.message.includes("deleted");
+        const message = props?.collapsedReason?.message;
+        return !message.includes("deleted") && message !== i18n.Messages.HIDDEN_SPAM_MESSAGE_COUNT.message;
     }
 });
