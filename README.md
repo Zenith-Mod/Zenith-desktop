@@ -28,25 +28,11 @@ Visit https://vencord.dev/download
 
 ## Join our Support/Community Server
 
-https://discord.gg/D9uwnFnqmd
+https://discord.gg/awfixer
 
-## Sponsors
+## Sponsoring and Supporting
 
-|     **Thanks a lot to all Vencord [sponsors](https://github.com/sponsors/Vendicated)!!**     |
-| :------------------------------------------------------------------------------------------: |
-|   [![](https://meow.vendicated.dev/sponsors.png)](https://github.com/sponsors/Vendicated)    |
-| *generated using [github-sponsor-graph](https://github.com/Vendicated/github-sponsor-graph)* |
-
-
-## Star History
-
-<a href="https://star-history.com/#Vendicated/Vencord&Timeline">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Vendicated/Vencord&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Vendicated/Vencord&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Vendicated/Vencord&type=Timeline" />
-  </picture>
-</a>
+Zenith Desktop is made by [AWFixer and Friends](https://awfixer.me) as well as [Axyl Projects](https://axylprojects.dev) and [rootCORP Games](https://rootcorp.dev) so any support that you show them goes a long way to enabling them to keep working on this project as well
 
 ## Disclaimer
 
